@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('bukti_dokumen_assesor', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('assesor_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('assesor_id')->constrained('assesor')->onDelete('cascade');
             $table->string('nama_dokumen');
             $table->string('file_path');
             $table->timestamps();

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('nama_lengkap');
             $table->string('no_registrasi')->unique();
             $table->string('email')->unique();
+            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']);
             $table->string('no_telepon');
             $table->string('kompetensi');
             $table->timestamps();
