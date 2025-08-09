@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\AssesorAttachment;
+use App\Models\User;
 
 class Assesor extends Model
 {
@@ -26,6 +27,6 @@ class Assesor extends Model
 
     public function attachments()
     {
-        return $this->hasMany(AssesorAttachment::class, 'assesor_id');
+        return $this->hasMany(AssesorAttachment::class);
     }
 }
