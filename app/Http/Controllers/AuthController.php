@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Jurusan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -10,10 +11,17 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    public function jurusanIndex()
+    {
+        $jurusan = Jurusan::all();
+        return response()->json($jurusan);
+    }
+    
     public function register(Request $request){
 
         $fields = $request->validate([
             'username' => 'required',
+            'jurusan_id' => 'nullable|exists:jurusan,id',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6'
         ]);

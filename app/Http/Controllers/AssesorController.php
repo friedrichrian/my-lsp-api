@@ -170,7 +170,7 @@ class AssesorController extends Controller
             if (!empty($validated['attachments'])) {
                 foreach ($validated['attachments'] as $attachment) {
                     $filename = uniqid().'_'.$attachment->getClientOriginalName();
-                    $path = 'private/assesor/'.$assesor->id.'/'.$filename;
+                    $path = 'assesor/'.$assesor->id.'/'.$filename;
                     $encryptedContents = encrypt(file_get_contents($attachment->getRealPath()));
                     Storage::makeDirectory(dirname($path));
                     file_put_contents(Storage::path($path), $encryptedContents);
@@ -178,7 +178,7 @@ class AssesorController extends Controller
                     AssesorAttachment::create([
                         'assesor_id' => $assesor->id,
                         'nama_dokumen' => $attachment->getClientOriginalName(),
-                        'file_path' => $path
+                        'file_path' => 'private/'.$path
                     ]);
                 }
             }

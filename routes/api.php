@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AssesiController;
 use App\Http\Controllers\AssesorController;
+use App\Http\Controllers\AssesmentController;
+use App\Http\Controllers\ApprovementController;
 use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
@@ -18,6 +20,7 @@ Route::middleware(['throttle:10,1'])->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum'); 
     });
+    Route::get('/jurusan', [AuthController::class, 'jurusanIndex']);
 
     Route::get('/user', [UserController::class, 'show'])->middleware('auth:sanctum');
 });
@@ -35,4 +38,20 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/assesor/{id}', [AssesorController::class, 'show']);
     Route::put('/assesor/{id}', [AssesorController::class, 'update']);
     Route::delete('/assesor/{id}', [AssesorController::class, 'destroy']);
+
+    //Approvement Details routes
+    Route::get('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
+
+    //Approvement routes
+    Route::post('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'approveFormApl01']);
+
+    // Attachments routes
+    Route::get('/form-apl01/attachment/{id}/view', [ApprovementController::class, 'viewAttachment'])
+    ->name('form-apl01.attachment.view');
+
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Routes Assesment for User / Assesi
+    Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
 });
