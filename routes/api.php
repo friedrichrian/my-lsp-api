@@ -28,13 +28,11 @@ Route::middleware(['throttle:10,1'])->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     //Assesi routes
     Route::post('/assesi', [AssesiController::class, 'store']);
-    Route::get('/assesi', [AssesiController::class, 'index']);
     Route::put('/assesi/{id}', [AssesiController::class, 'update']);
     Route::delete('/assesi/{id}', [AssesiController::class, 'destroy']);
 
     //Assesor routes
     Route::post('/assesor', [AssesorController::class, 'store']);
-    Route::get('/assesor', [AssesorController::class, 'index']);
     Route::get('/assesor/{id}', [AssesorController::class, 'show']);
     Route::put('/assesor/{id}', [AssesorController::class, 'update']);
     Route::delete('/assesor/{id}', [AssesorController::class, 'destroy']);
@@ -54,4 +52,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     // Routes Assesment for User / Assesi
     Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
+    Route::get('/assesi', [AssesiController::class, 'index']);
+    Route::get('/assesor', [AssesorController::class, 'index']);
 });
