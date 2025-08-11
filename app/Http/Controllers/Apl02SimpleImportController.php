@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use PhpOffice\PhpWord\IOFactory;
-use App\Helpers\WordParser;
-use App\Models\Apl02SimpleItem;
 use Exception;
 
 class Apl02SimpleImportController extends Controller
@@ -18,186 +16,176 @@ class Apl02SimpleImportController extends Controller
             ]);
 
             $phpWord = IOFactory::load($request->file('file')->getPathName());
-            $texts = [];
-
-            foreach ($phpWord->getSections() as $section) {
-                foreach ($section->getElements() as $element) {
-                    $texts = array_merge($texts, WordParser::extractText($element));
-                }
-            }
 
             $judulSkema = null;
             $nomorSkema = null;
-            $unitKe = 0;
-            $kodeUnit = null;
-            $judulUnit = null;
+            $units = [];
+            $unitKe = null;
             $currentElemenIndex = null;
-            $currentElemenText = null;
-            $recordCount = 0;
+            $kukMode = false;
+            $kukIndex = 1;
 
-            foreach ($texts as $line) {
-                $line = trim(preg_replace('/\s+/', ' ', $line));
-                if (empty($line)) continue;
-
-                // Clean up the line from table separators
-                $cleanLine = str_replace(['|', '**', '*'], '', $line);
-                $cleanLine = trim($cleanLine);
-
-                // 1. Capture Judul Skema - look for pattern with "Pemrogram Junior"
-                if (preg_match('/Judul\s*:?\s*(.*(?:Pemrogram\s+Junior|Junior\s+Coder).*)/i', $cleanLine, $m) && !$judulSkema) {
-                    $judulSkema = trim($m[1]);
-                    continue;
-                }
-
-                // Alternative pattern for schema title
-                if (preg_match('/(Pemrogram\s+Junior.*(?:Coder)?)/i', $cleanLine, $m) && !$judulSkema && !preg_match('/unit/i', $cleanLine)) {
-                    $judulSkema = trim($m[1]);
-                    continue;
-                }
-
-                // 2. Capture Nomor Skema - look for SKM pattern
-                if (preg_match('/Nomor\s*:?\s*(SKM\.[\w\.\/]+)/i', $cleanLine, $m) && !$nomorSkema) {
-                    $nomorSkema = trim($m[1]);
-                    continue;
-                }
-
-                // Alternative pattern for nomor skema
-                if (preg_match('/(SKM\.[\w\.\/]+)/i', $cleanLine, $m) && !$nomorSkema) {
-                    $nomorSkema = trim($m[1]);
-                    continue;
-                }
-
-                // 3. Capture Unit Kompetensi and Kode Unit
-                if (preg_match('/Unit\s+Kompetensi\s+(\d+).*Kode\s+Unit\s*:?\s*(J\.[\d\.]+)/i', $cleanLine, $m)) {
-                    $unitKe = (int)$m[1];
-                    $kodeUnit = trim($m[2]);
-                    continue;
-                }
-
-                // Separate patterns for unit detection
-                if (preg_match('/Unit\s+Kompetensi\s+(\d+)/i', $cleanLine, $m)) {
-                    $unitKe = (int)$m[1];
-                    continue;
-                }
-
-                if (preg_match('/Kode\s+Unit\s*:?\s*(J\.[\d\.]+)/i', $cleanLine, $m)) {
-                    $kodeUnit = trim($m[1]);
-                    continue;
-                }
-
-                // 4. Capture Judul Unit
-                if (preg_match('/Judul\s+Unit\s*:?\s*(.+)/i', $cleanLine, $m)) {
-                    $judulUnit = trim($m[1]);
-                    // Clean up common artifacts
-                    $judulUnit = preg_replace('/\s*(Dapatkah|Saya).*$/i', '', $judulUnit);
-                    $judulUnit = trim($judulUnit);
-                    continue;
-                }
-
-                // Alternative pattern for unit title
-                if (preg_match('/(Menggunakan\s+Struktur\s+Data|Menggunakan\s+Spesifikasi\s+Program|Menerapkan\s+Perintah|Menulis\s+Kode|Mengimplementasikan|Membuat\s+Dokumen|Melakukan\s+Debugging|Melaksanakan\s+Pengujian)/i', $cleanLine, $m) 
-                    && !preg_match('/Elemen/i', $cleanLine) 
-                    && !$judulUnit) {
-                    
-                    // Extract the full title
-                    $judulUnit = trim($m[1]);
-                    if (preg_match('/(' . preg_quote($m[1], '/') . '[^|]*)/i', $cleanLine, $fullMatch)) {
-                        $judulUnit = trim($fullMatch[1]);
+            foreach ($phpWord->getSections() as $section) {
+                foreach ($section->getElements() as $element) {
+                    if (!($element instanceof \PhpOffice\PhpWord\Element\Table)) {
+                        continue;
                     }
-                    continue;
-                }
 
-                // 5. Capture Elemen - look for "Elemen X :" pattern
-                if (preg_match('/Elemen\s+(\d+)\s*:?\s*(.+?)(?:\s*Kriteria|$)/i', $cleanLine, $m)) {
-                    $currentElemenIndex = (int)$m[1];
-                    $currentElemenText = trim($m[2]);
-                    
-                    // Clean up the element text
-                    $currentElemenText = preg_replace('/\s*(Kriteria\s+Unjuk\s+Kerja|Dapatkah|Saya).*$/i', '', $currentElemenText);
-                    $currentElemenText = trim($currentElemenText);
-
-                    // Only save if we have minimum required data
-                    if ($judulSkema || $nomorSkema || $kodeUnit) {
-                        Apl02SimpleItem::create([
-                            'judul_skema' => $judulSkema,
-                            'nomor_skema' => $nomorSkema,
-                            'unit_ke' => $unitKe,
-                            'kode_unit' => $kodeUnit,
-                            'judul_unit' => $judulUnit,
-                            'elemen_index' => $currentElemenIndex,
-                            'elemen_text' => $currentElemenText,
-                            'sub_index' => null,
-                            'sub_text' => null,
-                        ]);
-                        $recordCount++;
-                    }
-                    continue;
-                }
-
-                // 6. Capture Kriteria Unjuk Kerja (sub-elemen) - numbered list
-                if (preg_match('/^(\d+)\.\s*(.+)/i', $cleanLine, $m) && $currentElemenIndex !== null) {
-                    $subText = trim($m[2]);
-                    
-                    // Clean up common artifacts from table parsing
-                    $subText = preg_replace('/\s*(Kriteria|Unjuk|Kerja|Dapatkah|Saya|Bukti|relevan).*$/i', '', $subText);
-                    $subText = trim($subText);
-                    
-                    // Skip if the text is too short or seems like table header
-                    if (strlen($subText) > 10 && !preg_match('/^(K|B|☐)$/i', $subText)) {
-                        // Only save if we have minimum required data
-                        if ($judulSkema || $nomorSkema || $kodeUnit) {
-                            Apl02SimpleItem::create([
-                                'judul_skema' => $judulSkema,
-                                'nomor_skema' => $nomorSkema,
-                                'unit_ke' => $unitKe,
-                                'kode_unit' => $kodeUnit,
-                                'judul_unit' => $judulUnit,
-                                'elemen_index' => $currentElemenIndex,
-                                'elemen_text' => $currentElemenText,
-                                'sub_index' => $currentElemenIndex . '.' . $m[1],
-                                'sub_text' => $subText,
-                            ]);
-                            $recordCount++;
+                    // Skip tabel tanda tangan/ttd
+                    $skipTable = false;
+                    foreach ($element->getRows() as $row) {
+                        foreach ($row->getCells() as $cell) {
+                            foreach ($cell->getElements() as $el) {
+                                if (method_exists($el, 'getText')) {
+                                    $text = strtolower(trim($el->getText()));
+                                    if (strpos($text, 'tanda tangan') !== false || strpos($text, 'ttd') !== false) {
+                                        $skipTable = true;
+                                        break 3; // keluar dari cell, row, element loops
+                                    }
+                                }
+                            }
                         }
                     }
-                    continue;
-                }
+                    if ($skipTable) continue;
 
-                // Additional patterns for capturing missed unit titles
-                if (!$judulUnit && preg_match('/(Membuat\s+Dokumen\s+Kode\s+Program|Melakukan\s+Debugging|Melaksanakan\s+Pengujian\s+Unit\s+Program)/i', $cleanLine, $m)) {
-                    $judulUnit = trim($m[1]);
-                    continue;
+                    foreach ($element->getRows() as $row) {
+                        $cells = $row->getCells();
+                        $cellTexts = [];
+
+                        // Ambil semua paragraf dari setiap cell
+                        foreach ($cells as $cell) {
+                            $paragraphs = [];
+                            foreach ($cell->getElements() as $el) {
+                                if (method_exists($el, 'getText')) {
+                                    $text = trim(preg_replace('/\s+/', ' ', $el->getText()));
+                                    if ($text !== '') {
+                                        $paragraphs[] = $text;
+                                    }
+                                }
+                            }
+                            $cellTexts[] = $paragraphs;
+                        }
+
+                        // Cek judul skema (scan semua cell)
+                        if (!$judulSkema) {
+                            foreach ($cellTexts as $i => $col) {
+                                foreach ($col as $p) {
+                                    if (stripos($p, 'Judul') !== false) {
+                                        // Ambil teks di cell kanan (jika ada)
+                                        $judulSkema = $cellTexts[$i + 1][0] ?? null;
+                                        break 2;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Cek nomor skema
+                        foreach ($cellTexts as $col) {
+                            foreach ($col as $p) {
+                                if (preg_match('/SKM\.[\w\.\/-]+/i', $p, $m)) {
+                                    $nomorSkema = $m[0];
+                                }
+                            }
+                        }
+
+                        // Cek unit kompetensi
+                        foreach ($cellTexts as $col) {
+                            foreach ($col as $p) {
+                                if (preg_match('/Unit\s+Kompetensi\s+(\d+)/i', $p, $m)) {
+                                    $unitKe = (int)$m[1];
+                                    if (!isset($units[$unitKe])) {
+                                        $units[$unitKe] = [
+                                            'unit_ke' => $unitKe,
+                                            'kode_unit' => null,
+                                            'judul_unit' => null,
+                                            'elemen' => []
+                                        ];
+                                    }
+                                    $currentElemenIndex = null;
+                                    $kukMode = false;
+                                    $kukIndex = 1;
+                                }
+                            }
+                        }
+
+                        // Ambil kode unit & judul unit dengan scan semua cell
+                        foreach ($cellTexts as $i => $col) {
+                            foreach ($col as $p) {
+                                if (stripos($p, 'Kode Unit') !== false) {
+                                    if (isset($cellTexts[$i + 1][0]) && preg_match('/J\.[\d\.]+/i', $cellTexts[$i + 1][0], $m)) {
+                                        $units[$unitKe]['kode_unit'] = $m[0];
+                                    }
+                                }
+                                if (stripos($p, 'Judul Unit') !== false) {
+                                    if (isset($cellTexts[$i + 1][0])) {
+                                        $units[$unitKe]['judul_unit'] = $cellTexts[$i + 1][0];
+                                    }
+                                }
+                            }
+                        }
+
+                        // Loop elemen & KUK
+                        foreach ($cellTexts as $col) {
+                            foreach ($col as $p) {
+                                // Deteksi Elemen
+                                if (preg_match('/^Elemen\s+(\d+)\s*:\s*(.+)/i', $p, $m)) {
+                                    $idx = (int)$m[1];
+                                    $name = $m[2];
+                                    $units[$unitKe]['elemen'][$idx] = [
+                                        'elemen_index' => $idx,
+                                        'nama_elemen' => $name,
+                                        'kuk' => []
+                                    ];
+                                    $currentElemenIndex = $idx;
+                                    $kukMode = false;
+                                    $kukIndex = 1;
+                                    continue;
+                                }
+
+                                // Deteksi awal KUK
+                                if (stripos($p, 'Kriteria Unjuk Kerja') !== false) {
+                                    $kukMode = true;
+                                    $kukIndex = 1;
+                                    continue;
+                                }
+
+                                // Masukkan KUK kalau mode aktif
+                                if ($kukMode && $currentElemenIndex !== null && $p !== '') {
+                                    if (preg_match('/^Elemen\s+\d+/i', $p)) {
+                                        $kukMode = false;
+                                        continue;
+                                    }
+                                    $clean = preg_replace('/^\s*\d+(\.\d+)*\s*/', '', $p);
+                                    if ($clean !== '') {
+                                        $units[$unitKe]['elemen'][$currentElemenIndex]['kuk'][] = [
+                                            'urutan' => $kukIndex,
+                                            'deskripsi_kuk' => $clean
+                                        ];
+                                        $kukIndex++;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            if ($recordCount === 0) {
-                return response()->json([
-                    'error' => true,
-                    'message' => 'Tidak ada data yang berhasil diimport',
-                    'debug' => [
-                        'total_lines' => count($texts),
-                        'sample_lines' => array_slice($texts, 0, 30),
-                        'extracted_data' => [
-                            'judul_skema' => $judulSkema,
-                            'nomor_skema' => $nomorSkema,
-                            'sample_units' => $unitKe,
-                            'sample_kode_unit' => $kodeUnit,
-                        ]
-                    ]
-                ], 400);
+            // Rapikan output (urutkan elemen dan kuk)
+            foreach ($units as &$unit) {
+                ksort($unit['elemen']);
+                foreach ($unit['elemen'] as &$elemen) {
+                    if (!empty($elemen['kuk'])) {
+                        usort($elemen['kuk'], fn($a, $b) => $a['urutan'] <=> $b['urutan']);
+                    }
+                }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data berhasil diimport',
-                'total_records' => $recordCount,
-                'summary' => [
-                    'judul_skema' => $judulSkema,
-                    'nomor_skema' => $nomorSkema,
-                    'total_units' => $unitKe,
-                ],
-                'sample_data' => Apl02SimpleItem::orderBy('id', 'desc')->first()
-            ], 200);
+                'judul_skema' => $judulSkema,
+                'nomor_skema' => $nomorSkema,
+                'data' => array_values($units)
+            ]);
 
         } catch (Exception $e) {
             return response()->json([
@@ -206,35 +194,5 @@ class Apl02SimpleImportController extends Controller
                 'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
-    }
-
-    public function show($id)
-    {
-        $item = Apl02SimpleItem::findOrFail($id);
-        return response()->json($item);
-    }
-
-    public function index()
-    {
-        $items = Apl02SimpleItem::orderBy('unit_ke')
-                                ->orderBy('elemen_index')
-                                ->orderBy('sub_index')
-                                ->get();
-        
-        return response()->json([
-            'success' => true,
-            'data' => $items,
-            'total' => $items->count()
-        ]);
-    }
-
-    public function clear()
-    {
-        Apl02SimpleItem::truncate();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Semua data berhasil dihapus'
-        ]);
     }
 }
