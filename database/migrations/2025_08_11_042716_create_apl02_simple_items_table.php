@@ -7,23 +7,51 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void {
-        Schema::create('apl02_simple_items', function (Blueprint $table) {
+        Schema::create('schemas', function (Blueprint $table) {
             $table->id();
-            $table->string('judul_skema')->nullable();
-            $table->string('nomor_skema')->nullable();
-            $table->integer('unit_ke')->nullable();
-            $table->string('kode_unit')->nullable();
-            $table->string('judul_unit')->nullable();
-            $table->integer('elemen_index')->nullable();
-            $table->string('elemen_text')->nullable();
-            $table->string('sub_index')->nullable(); // 1.1, 1.2
-            $table->string('sub_text')->nullable();
+            $table->foreignId('jurusan_id')->constrained('jurusan')->onDelete('cascade');
+            $table->string('judul_skema');
+            $table->string('nomor_skema')->unique();
             $table->timestamps();
+        });
+
+        Schema::create('units', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('schema_id')->constrained()->onDelete('cascade');
+            $table->integer('unit_ke');
+            $table->string('kode_unit');
+            $table->string('judul_unit');
+            $table->timestamps();
+            $table->unique(['schema_id', 'unit_ke']);
+        });
+
+        Schema::create('elements', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('unit_id')->constrained()->onDelete('cascade');
+            $table->integer('elemen_index');
+            $table->string('nama_elemen');
+            $table->timestamps();
+            
+            $table->unique(['unit_id', 'elemen_index']);
+        });
+
+        Schema::create('kriteria_untuk_kerja', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('element_id')->constrained()->onDelete('cascade');
+            $table->integer('urutan');
+            $table->text('deskripsi_kuk');
+            $table->timestamps();
+            
+            $table->unique(['element_id', 'urutan']);
         });
     }
 
     public function down(): void {
         Schema::dropIfExists('apl02_simple_items');
+        Schema::dropIfExists('kriteria_untuk_kerja');
+        Schema::dropIfExists('elements');
+        Schema::dropIfExists('units');
+        Schema::dropIfExists('schemas');
     }
 };
 
