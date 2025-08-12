@@ -20,4 +20,9 @@ class Jurusan extends Model
     {
         return $this->hasMany(Assesi::class);
     }
+
+    public function schemas()
+    {
+        return $this->hasMany(Schema::class);
+    }
 }

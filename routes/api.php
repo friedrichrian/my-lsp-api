@@ -8,6 +8,7 @@ use App\Http\Controllers\AssesorController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\ApprovementController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Apl02ImportController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -47,6 +48,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/form-apl01/attachment/{id}/view', [ApprovementController::class, 'viewAttachment'])
     ->name('form-apl01.attachment.view');
 
+    Route::post('/apl02/import', [Apl02ImportController::class, 'import']);
+    Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
