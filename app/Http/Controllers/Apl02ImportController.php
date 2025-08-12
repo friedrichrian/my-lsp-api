@@ -295,4 +295,31 @@ class Apl02ImportController extends Controller
             })->sortBy('unit_ke')->values()->toArray()
         ]);
     }
+
+    public function schemaIndex() {
+        $schemas = Schema::with(['jurusan', 'units.elements.kriteriaUntukKerja'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'data' => $schemas->map(function($schema) {
+                return [
+                    'id' => $schema->id,
+                    'judul_skema' => $schema->judul_skema,
+                    'nomor_skema' => $schema->nomor_skema,
+                    'jurusan' => [
+                        'id' => $schema->jurusan->id,
+                        'nama_jurusan' => $schema->jurusan->nama_jurusan
+                    ],
+                    'total_units' => $schema->units()->count(),
+                    'total_elements' => $schema->units()->withCount('elements')->get()->sum('elements_count'),
+                    'total_kuk' => $schema->countTotalKuk(),
+                    'tanggal_mulai' => $schema->tanggal_mulai,
+                    'tanggal_selesai' => $schema->tanggal_selesai,
+                    'created_at' => $schema->created_at,
+                ];
+            })
+        ]);
+    }
 }

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Schema extends Model
 {
-    protected $fillable = ['judul_skema', 'nomor_skema', 'jurusan_id'];
+    protected $fillable = ['judul_skema', 'nomor_skema', 'jurusan_id', 'tanggal_mulai', 'tanggal_selesai'];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
