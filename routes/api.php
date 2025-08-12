@@ -57,4 +57,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
     Route::get('/assesi', [AssesiController::class, 'index']);
     Route::get('/assesor', [AssesorController::class, 'index']);
+
+    // Routes Assesment for Assesor
+    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex']);
 });
