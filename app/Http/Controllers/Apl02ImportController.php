@@ -13,212 +13,380 @@ use Exception;
 
 class Apl02ImportController extends Controller
 {
-    public function import(Request $request)
-    {
-        try {
-            $request->validate([
-                'file' => 'required|mimes:doc,docx',
-                'jurusan_id' => 'required|exists:jurusan,id'
-            ]);
+     public function import(Request $request)
+        {
+            try {
+                $request->validate([
+                    'file' => 'required|mimes:doc,docx',
+                    'jurusan_id' => 'required|exists:jurusan,id'
+                ]);
 
-            $phpWord = IOFactory::load($request->file('file')->getPathName());
-            $texts = [];
+                $filePath = $request->file('file')->getRealPath();
+                $extension = $request->file('file')->getClientOriginalExtension();
+                
+                $texts = [];
+                $structuredData = [];
 
-            // Extract all text from document
-            foreach ($phpWord->getSections() as $section) {
-                foreach ($section->getElements() as $element) {
-                    $texts = array_merge($texts, WordParser::extractText($element));
-                }
-            }
-
-            $jurusanId = $request->input('jurusan_id');
-            $judulSkema = null;
-            $nomorSkema = null;
-            $units = [];
-            $unitKe = 0;
-            $kodeUnit = null;
-            $judulUnit = null;
-            $currentElemenIndex = null;
-
-            foreach ($texts as $line) {
-                $line = trim(preg_replace('/\s+/', ' ', $line));
-                if (empty($line)) continue;
-
-                $cleanLine = str_replace(['|', '**', '*'], '', $line);
-                $cleanLine = trim($cleanLine);
-
-                // 1. Capture Judul Skema
-                if (preg_match('/Judul\s*:?\s*(.*(?:Pemrogram\s+Junior|Junior\s+Coder).*)/i', $cleanLine, $m) && !$judulSkema) {
-                    $judulSkema = trim($m[1]);
-                    continue;
-                }
-
-                if (preg_match('/(Pemrogram\s+Junior.*(?:Coder)?)/i', $cleanLine, $m) && !$judulSkema && !preg_match('/unit/i', $cleanLine)) {
-                    $judulSkema = trim($m[1]);
-                    continue;
-                }
-
-                // 2. Capture Nomor Skema
-                if (preg_match('/Nomor\s*:?\s*(SKM\.[\w\.\/]+)/i', $cleanLine, $m) && !$nomorSkema) {
-                    $nomorSkema = trim($m[1]);
-                    continue;
-                }
-
-                if (preg_match('/(SKM\.[\w\.\/]+)/i', $cleanLine, $m) && !$nomorSkema) {
-                    $nomorSkema = trim($m[1]);
-                    continue;
-                }
-
-                // 3. Capture Unit Kompetensi dan Kode Unit
-                if (preg_match('/Unit\s+Kompetensi\s+(\d+).*Kode\s+Unit\s*:?\s*(J\.[\d\.]+)/i', $cleanLine, $m)) {
-                    $unitKe = (int)$m[1];
-                    $kodeUnit = trim($m[2]);
-                    $units[$unitKe] = [
-                        'unit_ke' => $unitKe,
-                        'kode_unit' => $kodeUnit,
-                        'judul_unit' => null,
-                        'elemen' => []
-                    ];
-                    continue;
-                }
-
-                if (preg_match('/Unit\s+Kompetensi\s+(\d+)/i', $cleanLine, $m)) {
-                    $unitKe = (int)$m[1];
-                    if (!isset($units[$unitKe])) {
-                        $units[$unitKe] = [
-                            'unit_ke' => $unitKe,
-                            'kode_unit' => null,
-                            'judul_unit' => null,
-                            'elemen' => []
-                        ];
+                if (strtolower($extension) === 'docx') {
+                    $result = $this->parseDocxWithXml($filePath);
+                    $texts = $result['texts'];
+                    $structuredData = $result['structured'];
+                } else {
+                    $phpWord = IOFactory::load($filePath);
+                    foreach ($phpWord->getSections() as $section) {
+                        foreach ($section->getElements() as $element) {
+                            $texts = array_merge($texts, WordParser::extractText($element));
+                        }
                     }
-                    continue;
                 }
 
-                if (preg_match('/Kode\s+Unit\s*:?\s*(J\.[\d\.]+)/i', $cleanLine, $m)) {
-                    $kodeUnit = trim($m[1]);
-                    if (isset($units[$unitKe])) {
-                        $units[$unitKe]['kode_unit'] = $kodeUnit;
+                $jurusanId = $request->input('jurusan_id');
+                $judulSkema = null;
+                $nomorSkema = null;
+                $units = [];
+                $unitKe = 0;
+                $kodeUnit = null;
+                $judulUnit = null;
+                $currentElemenIndex = null;
+                $currentKukCounter = 1; // Counter untuk urutan KUK per elemen
+
+                foreach ($texts as $index => $line) {
+                    $line = trim(preg_replace('/\s+/', ' ', $line));
+                    if (empty($line)) continue;
+
+                    $cleanLine = str_replace(['|', '**', '*'], '', $line);
+                    $cleanLine = trim($cleanLine);
+
+                    $numberInfo = isset($structuredData[$index]) ? $structuredData[$index] : null;
+
+                    // 1. Capture Judul Skema
+                    if (preg_match('/Judul\s*:?\s*(.*(?:Pemrogram\s+Junior|Junior\s+Coder).*)/i', $cleanLine, $m) && !$judulSkema) {
+                        $judulSkema = trim($m[1]);
+                        continue;
                     }
-                    continue;
-                }
 
-                // 4. Capture Judul Unit
-                if (preg_match('/Judul\s+Unit\s*:?\s*(.+)/i', $cleanLine, $m)) {
-                    $judulUnit = trim($m[1]);
-                    $judulUnit = preg_replace('/\s*(Dapatkah|Saya).*$/i', '', $judulUnit);
-                    $judulUnit = trim($judulUnit);
-                    if (isset($units[$unitKe])) {
-                        $units[$unitKe]['judul_unit'] = $judulUnit;
+                    if (preg_match('/(Pemrogram\s+Junior.*(?:Coder)?)/i', $cleanLine, $m) && !$judulSkema && !preg_match('/unit/i', $cleanLine)) {
+                        $judulSkema = trim($m[1]);
+                        continue;
                     }
-                    continue;
-                }
 
-                // 5. Capture Elemen
-                if (preg_match('/Elemen\s+(\d+)\s*:?\s*(.+)$/i', $cleanLine, $m)) {
-                    $currentElemenIndex = (int)$m[1];
-                    $elemenContent = trim($m[2]);
+                    // 2. Capture Nomor Skema
+                    if (preg_match('/Nomor\s*:?\s*(SKM\.[\w\.\/]+)/i', $cleanLine, $m) && !$nomorSkema) {
+                        $nomorSkema = trim($m[1]);
+                        continue;
+                    }
 
-                    // Initialize unit if not exists
-                    if (!isset($units[$unitKe])) {
+                    if (preg_match('/(SKM\.[\w\.\/]+)/i', $cleanLine, $m) && !$nomorSkema) {
+                        $nomorSkema = trim($m[1]);
+                        continue;
+                    }
+
+                    // 3. Capture Unit Kompetensi
+                    if (preg_match('/Unit\s+Kompetensi\s+(\d+).*Kode\s+Unit\s*:?\s*(J\.[\d\.]+)/i', $cleanLine, $m)) {
+                        $unitKe = (int)$m[1];
+                        $kodeUnit = trim($m[2]);
                         $units[$unitKe] = [
                             'unit_ke' => $unitKe,
                             'kode_unit' => $kodeUnit,
-                            'judul_unit' => $judulUnit,
+                            'judul_unit' => null,
                             'elemen' => []
                         ];
+                        continue;
                     }
 
-                    // Split element content
-                    $patternPertanyaan = '/\b(Kriteria\s+Unjuk\s+Kerja[:]?)/i';
+                    if (preg_match('/Unit\s+Kompetensi\s+(\d+)/i', $cleanLine, $m)) {
+                        $unitKe = (int)$m[1];
+                        if (!isset($units[$unitKe])) {
+                            $units[$unitKe] = [
+                                'unit_ke' => $unitKe,
+                                'kode_unit' => null,
+                                'judul_unit' => null,
+                                'elemen' => []
+                            ];
+                        }
+                        continue;
+                    }
 
-                    if (preg_match($patternPertanyaan, $elemenContent, $pertanyaanMatch, PREG_OFFSET_CAPTURE)) {
-                        $pos = $pertanyaanMatch[0][1];
-                        $elemenPernyataan = trim(substr($elemenContent, 0, $pos));
-                        $subsText = trim(substr($elemenContent, $pos + strlen($pertanyaanMatch[0][0])));
+                    // Capture Kode Unit
+                    if (preg_match('/Kode\s+Unit\s*:?\s*(J\.[\w\d\.\/\-]+)/i', $cleanLine, $m)) {
+                        $kodeUnit = trim($m[1]);
+                        if (isset($units[$unitKe])) {
+                            $units[$unitKe]['kode_unit'] = $kodeUnit;
+                        }
+                        continue;
+                    }
 
-                        // Initialize element
-                        $units[$unitKe]['elemen'][$currentElemenIndex] = [
-                            'elemen_index' => $currentElemenIndex,
-                            'nama_elemen' => $elemenPernyataan,
-                            'kuk' => []
-                        ];
+                    // 4. Capture Judul Unit
+                    if (preg_match('/Judul\s+Unit\s*:?\s*(.+)/i', $cleanLine, $m)) {
+                        $judulUnit = trim($m[1]);
+                        $judulUnit = preg_replace('/\s*(Dapatkah|Saya).*$/i', '', $judulUnit);
+                        $judulUnit = trim($judulUnit);
+                        if (isset($units[$unitKe]) && !empty($judulUnit)) {
+                            $units[$unitKe]['judul_unit'] = $judulUnit;
+                        }
+                        continue;
+                    }
 
-                        // Extract KUK items
-                        preg_match_all('/([A-Z][^A-Z]+)/', $subsText, $subsMatches);
-                        $kukList = !empty($subsMatches[0]) ? $subsMatches[0] : [$subsText];
+                    // 5. Capture Elemen - Reset KUK counter setiap elemen baru
+                    if (preg_match('/Elemen\s+(\d+)\s*:?\s*(.+)$/i', $cleanLine, $m)) {
+                        $currentElemenIndex = (int)$m[1];
+                        $currentKukCounter = 1; // Reset counter KUK untuk elemen baru
+                        $elemenContent = trim($m[2]);
 
-                        foreach ($kukList as $index => $kuk) {
-                            $kuk = trim($kuk);
-                            if (strlen($kuk) > 10 && !preg_match('/^(K|B|☐)$/i', $kuk)) {
+                        if (!isset($units[$unitKe])) {
+                            $units[$unitKe] = [
+                                'unit_ke' => $unitKe,
+                                'kode_unit' => $kodeUnit,
+                                'judul_unit' => $judulUnit,
+                                'elemen' => []
+                            ];
+                        }
+
+                        $patternPertanyaan = '/\b(Kriteria\s+Unjuk\s+Kerja[:]?)/i';
+
+                        if (preg_match($patternPertanyaan, $elemenContent, $pertanyaanMatch, PREG_OFFSET_CAPTURE)) {
+                            $pos = $pertanyaanMatch[0][1];
+                            $elemenPernyataan = trim(substr($elemenContent, 0, $pos));
+                            $subsText = trim(substr($elemenContent, $pos + strlen($pertanyaanMatch[0][0])));
+
+                            $units[$unitKe]['elemen'][$currentElemenIndex] = [
+                                'elemen_index' => $currentElemenIndex,
+                                'nama_elemen' => $elemenPernyataan,
+                                'kuk' => []
+                            ];
+
+                            preg_match_all('/([A-Z][^A-Z]+)/', $subsText, $subsMatches);
+                            $kukList = !empty($subsMatches[0]) ? $subsMatches[0] : [$subsText];
+
+                            foreach ($kukList as $kuk) {
+                                $kuk = trim($kuk);
+                                if (strlen($kuk) > 10 && !preg_match('/^(K|B|☐)$/i', $kuk)) {
+                                    $units[$unitKe]['elemen'][$currentElemenIndex]['kuk'][] = [
+                                        'urutan' => $currentElemenIndex . '.' . $currentKukCounter++,
+                                        'deskripsi_kuk' => $kuk
+                                    ];
+                                }
+                            }
+                        } else {
+                            $units[$unitKe]['elemen'][$currentElemenIndex] = [
+                                'elemen_index' => $currentElemenIndex,
+                                'nama_elemen' => $elemenContent,
+                                'kuk' => []
+                            ];
+                        }
+                        continue;
+                    }
+
+                    // 6. Capture KUK dengan format penomoran baru
+                    $kukMatched = false;
+                    
+                    // Gunakan XML numbering info jika ada
+                    if ($numberInfo && $currentElemenIndex !== null) {
+                        $kukText = trim($cleanLine);
+                        $kukText = preg_replace('/\s*(Kriteria|Unjuk|Kerja|Dapatkah|Saya|Bukti|relevan).*$/i', '', $kukText);
+                        $kukText = trim($kukText);
+
+                        if (strlen($kukText) > 10 && !preg_match('/^(K|B|☐)$/i', $kukText)) {
+                            if (isset($units[$unitKe]['elemen'][$currentElemenIndex])) {
                                 $units[$unitKe]['elemen'][$currentElemenIndex]['kuk'][] = [
-                                    'urutan' => $index + 1,
-                                    'deskripsi_kuk' => $kuk
+                                    'urutan' => $currentElemenIndex . '.' . $currentKukCounter++,
+                                    'deskripsi_kuk' => $kukText
+                                ];
+                                $kukMatched = true;
+                            }
+                        }
+                    }
+                    
+                    // Fallback ke regex pattern matching
+                    if (!$kukMatched && preg_match('/^(\d+)\.\s*(.+)/i', $cleanLine, $m) && $currentElemenIndex !== null) {
+                        $kukText = trim($m[2]);
+                        $kukText = preg_replace('/\s*(Kriteria|Unjuk|Kerja|Dapatkah|Saya|Bukti|relevan).*$/i', '', $kukText);
+                        $kukText = trim($kukText);
+
+                        if (strlen($kukText) > 10 && !preg_match('/^(K|B|☐)$/i', $kukText)) {
+                            if (isset($units[$unitKe]['elemen'][$currentElemenIndex])) {
+                                $units[$unitKe]['elemen'][$currentElemenIndex]['kuk'][] = [
+                                    'urutan' => $currentElemenIndex . '.' . $currentKukCounter++,
+                                    'deskripsi_kuk' => $kukText
                                 ];
                             }
                         }
-                    } else {
-                        $units[$unitKe]['elemen'][$currentElemenIndex] = [
-                            'elemen_index' => $currentElemenIndex,
-                            'nama_elemen' => $elemenContent,
-                            'kuk' => []
-                        ];
                     }
-                    continue;
-                }
 
-                // 6. Capture KUK (numbered items)
-                if (preg_match('/^(\d+)\.\s*(.+)/i', $cleanLine, $m) && $currentElemenIndex !== null) {
-                    $kukText = trim($m[2]);
-                    $kukText = preg_replace('/\s*(Kriteria|Unjuk|Kerja|Dapatkah|Saya|Bukti|relevan).*$/i', '', $kukText);
-                    $kukText = trim($kukText);
-
-                    if (strlen($kukText) > 10 && !preg_match('/^(K|B|☐)$/i', $kukText)) {
-                        if (isset($units[$unitKe]['elemen'][$currentElemenIndex])) {
-                            $units[$unitKe]['elemen'][$currentElemenIndex]['kuk'][] = [
-                                'urutan' => (int)$m[1],
-                                'deskripsi_kuk' => $kukText
-                            ];
+                    // Fallback untuk KUK tanpa penomoran
+                    if (!$kukMatched && $currentElemenIndex !== null && !empty(trim($cleanLine))) {
+                        $kukText = trim($cleanLine);
+                        if (strlen($kukText) > 10 && !preg_match('/^(K|B|☐|Elemen|Unit)/i', $kukText)) {
+                            if (isset($units[$unitKe]['elemen'][$currentElemenIndex])) {
+                                $units[$unitKe]['elemen'][$currentElemenIndex]['kuk'][] = [
+                                    'urutan' => $currentElemenIndex . '.' . $currentKukCounter++,
+                                    'deskripsi_kuk' => $kukText
+                                ];
+                            }
                         }
                     }
-                    continue;
                 }
-            }
 
-            // Sort units and elements
-            ksort($units);
-            foreach ($units as &$unit) {
-                ksort($unit['elemen']);
-                foreach ($unit['elemen'] as &$elemen) {
-                    usort($elemen['kuk'], fn($a, $b) => $a['urutan'] <=> $b['urutan']);
+                // Validasi data sebelum menyimpan
+                if (empty($judulSkema)) {
+                    throw new Exception('Judul Skema tidak ditemukan dalam dokumen');
                 }
+                
+                if (empty($nomorSkema)) {
+                    throw new Exception('Nomor Skema tidak ditemukan dalam dokumen');
+                }
+                
+                if (empty($units)) {
+                    throw new Exception('Tidak ada Unit Kompetensi yang ditemukan dalam dokumen');
+                }
+
+                // Berikan nilai default jika diperlukan
+                foreach ($units as $unitIndex => $unit) {
+                    if (empty($unit['judul_unit'])) {
+                        $units[$unitIndex]['judul_unit'] = 'Unit Kompetensi ' . $unit['unit_ke'];
+                    }
+                    if (empty($unit['kode_unit'])) {
+                        $units[$unitIndex]['kode_unit'] = 'J.' . str_pad($unit['unit_ke'], 3, '0', STR_PAD_LEFT) . '.00.00.00';
+                        \Log::warning("Kode Unit tidak ditemukan untuk Unit {$unit['unit_ke']}, menggunakan default: " . $units[$unitIndex]['kode_unit']);
+                    }
+                }
+
+                // Urutkan unit dan elemen
+                ksort($units);
+                foreach ($units as &$unit) {
+                    ksort($unit['elemen']);
+                    foreach ($unit['elemen'] as &$elemen) {
+                        usort($elemen['kuk'], function($a, $b) {
+                            return version_compare($a['urutan'], $b['urutan']);
+                        });
+                    }
+                }
+
+                // Simpan ke database
+                $schema = $this->saveToDatabase($judulSkema, $jurusanId, $nomorSkema, $units);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data successfully imported',
+                    'schema_id' => $schema->id,
+                    'judul_skema' => $schema->judul_skema,
+                    'nomor_skema' => $schema->nomor_skema,
+                    'total_units' => $schema->units()->count(),
+                    'total_elements' => $schema->units()->withCount('elements')->get()->sum('elements_count'),
+                    'total_kuk' => $schema->countTotalKuk(),
+                    'debug_info' => config('app.debug') ? [
+                        'parsed_units' => count($units),
+                        'found_schema_title' => !empty($judulSkema),
+                        'found_schema_number' => !empty($nomorSkema),
+                        'units_summary' => array_map(function($unit) {
+                            return [
+                                'unit_ke' => $unit['unit_ke'],
+                                'has_kode_unit' => !empty($unit['kode_unit']),
+                                'has_judul_unit' => !empty($unit['judul_unit']),
+                                'kode_unit' => $unit['kode_unit'],
+                                'elements_count' => count($unit['elemen'])
+                            ];
+                        }, $units)
+                    ] : null
+                ]);
+
+            } catch (Exception $e) {
+                return response()->json([
+                    'error' => true,
+                    'message' => $e->getMessage(),
+                    'trace' => config('app.debug') ? $e->getTraceAsString() : null
+                ], 500);
             }
-
-            // Save to database
-            $schema = $this->saveToDatabase($judulSkema, $jurusanId, $nomorSkema, $units);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data successfully imported',
-                'schema_id' => $schema->id,
-                'judul_skema' => $schema->judul_skema,
-                'nomor_skema' => $schema->nomor_skema,
-                'total_units' => $schema->units()->count(),
-                'total_elements' => $schema->units()->withCount('elements')->get()->sum('elements_count'),
-                'total_kuk' => $schema->countTotalKuk()
-            ]);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'error' => true,
-                'message' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
         }
+
+    private function parseDocxWithXml($filePath)
+    {
+        $zip = new \ZipArchive;
+        $texts = [];
+        $structuredData = [];
+        
+        if ($zip->open($filePath) === true) {
+            $documentXml = $zip->getFromName('word/document.xml');
+            $numberingXml = $zip->getFromName('word/numbering.xml');
+            $zip->close();
+
+            $doc = simplexml_load_string($documentXml);
+            $doc->registerXPathNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+            $counters = []; // Track counters per numId
+            $textIndex = 0;
+
+            foreach ($doc->xpath('//w:p') as $p) {
+                $numPr = $p->xpath('.//w:numPr/w:numId');
+                $level = $p->xpath('.//w:numPr/w:ilvl');
+                $textParts = $p->xpath('.//w:t');
+
+                if ($textParts) {
+                    $text = trim(implode(' ', array_map('strval', $textParts)));
+                } else {
+                    $text = '';
+                }
+
+                // Store text
+                $texts[] = $text;
+
+                // Store structured numbering info if available
+                if ($numPr && !empty($text)) {
+                    $numId = (string)$numPr[0]['w:val'];
+                    $lvl = $level ? (int)$level[0]['w:val'] : 0;
+
+                    if (!isset($counters[$numId])) {
+                        $counters[$numId] = [];
+                    }
+                    if (!isset($counters[$numId][$lvl])) {
+                        $counters[$numId][$lvl] = 1;
+                    } else {
+                        $counters[$numId][$lvl]++;
+                    }
+
+                    // Build number like 1.1
+                    $numberParts = [];
+                    for ($i = 0; $i <= $lvl; $i++) {
+                        $numberParts[] = $counters[$numId][$i] ?? 1;
+                    }
+                    $number = implode('.', $numberParts);
+
+                    $structuredData[$textIndex] = [
+                        'number' => $number,
+                        'level' => $lvl,
+                        'numId' => $numId
+                    ];
+                }
+
+                $textIndex++;
+            }
+        }
+
+        return [
+            'texts' => $texts,
+            'structured' => $structuredData
+        ];
+    }
+
+    private function extractUrutanFromNumber($number, $elemenIndex)
+    {
+        // Format urutan menjadi [elemen_index].[urutan], misal elemen 1 => 1.1, 1.2, 1.3
+        $parts = explode('.', $number);
+        $counter = (int)end($parts);
+        return $elemenIndex . '.' . $counter;
     }
 
     private function saveToDatabase($judulSkema, $jurusanId, $nomorSkema, $units)
     {
+        // Validate required data
+        if (empty($judulSkema)) {
+            throw new Exception('Judul Skema is required');
+        }
+        
+        if (empty($nomorSkema)) {
+            throw new Exception('Nomor Skema is required');
+        }
+
         // Create or update schema
         $schema = Schema::updateOrCreate(
             [
@@ -232,25 +400,26 @@ class Apl02ImportController extends Controller
         $schema->units()->delete();
 
         foreach ($units as $unitData) {
+            // Ensure judul_unit is not null
+            $judulUnit = $unitData['judul_unit'] ?? 'Unit Kompetensi ' . $unitData['unit_ke'];
+            $kodeUnit = $unitData['kode_unit'] ?? 'J.000.00.00.00';
+            
             $unit = $schema->units()->create([
                 'unit_ke' => $unitData['unit_ke'],
-                'kode_unit' => $unitData['kode_unit'],
-                'judul_unit' => $unitData['judul_unit']
-                // No jurusan_id here
+                'kode_unit' => $kodeUnit,
+                'judul_unit' => $judulUnit
             ]);
 
             foreach ($unitData['elemen'] as $elemenData) {
                 $element = $unit->elements()->create([
                     'elemen_index' => $elemenData['elemen_index'],
-                    'nama_elemen' => $elemenData['nama_elemen']
-                    // No jurusan_id here
+                    'nama_elemen' => $elemenData['nama_elemen'] ?? 'Elemen ' . $elemenData['elemen_index']
                 ]);
 
                 foreach ($elemenData['kuk'] as $kukData) {
                     $element->kriteriaUntukKerja()->create([
                         'urutan' => $kukData['urutan'],
-                        'deskripsi_kuk' => $kukData['deskripsi_kuk']
-                        // No jurusan_id here
+                        'deskripsi_kuk' => $kukData['deskripsi_kuk'] ?? 'Kriteria ' . $kukData['urutan']
                     ]);
                 }
             }

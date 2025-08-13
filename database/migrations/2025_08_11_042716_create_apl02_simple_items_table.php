@@ -40,7 +40,7 @@ return new class extends Migration {
         Schema::create('kriteria_untuk_kerja', function (Blueprint $table) {
             $table->id();
             $table->foreignId('element_id')->constrained()->onDelete('cascade');
-            $table->integer('urutan');
+            $table->string('urutan');
             $table->text('deskripsi_kuk');
             $table->timestamps();
             
