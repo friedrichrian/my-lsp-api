@@ -55,9 +55,11 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     // Routes Assesment for User / Assesi
     Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
+    Route::post('/assesment/formapl02', [AssesmentController::class, 'formApl02']);
     Route::get('/assesi', [AssesiController::class, 'index']);
     Route::get('/assesor', [AssesorController::class, 'index']);
 
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex']);
+    Route::get('/debug', [AssesmentController::class, 'debug']);
 });

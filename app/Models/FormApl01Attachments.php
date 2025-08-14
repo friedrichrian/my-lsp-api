@@ -12,6 +12,7 @@ class FormApl01Attachments extends Model
         'form_apl01_id',
         'nama_dokumen',
         'file_path',
+        'description',
     ];
 
     public function formApl01()

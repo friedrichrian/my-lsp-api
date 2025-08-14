@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bukti_dokumen_formapl01', function (Blueprint $table) {
+        Schema::create('bukti_dokumen_assesi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('form_apl01_id')->constrained('form_apl01')->onDelete('cascade');
+            $table->foreignId('assesi_id')->constrained('assesi')->onDelete('cascade');
             $table->string('nama_dokumen');
             $table->string('file_path');
             $table->string('description')->nullable();
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bukti_dokumen_formapl01');
+        Schema::dropIfExists('bukti_dokumen_assesi');
     }
 };

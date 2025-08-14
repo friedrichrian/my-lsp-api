@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\FormApl01;
 use App\Models\FormApl01Attachments;
+use App\Models\BuktiDokumenAssesi;
 use App\Models\Assesi;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +76,15 @@ class ApprovementController extends Controller
                     'form_apl01_id' => $formApl01->user->id,
                     'status' => 'approved'
                 ]);
+
+                foreach ($formApl01->attachments as $attachment) {
+                    $buktiDokumen = new BuktiDokumenAssesi();
+                    $buktiDokumen->assesi_id = Assesi::where('user_id', $formApl01->user_id)->first()->id;
+                    $buktiDokumen->nama_dokumen = $attachment->nama_dokumen;
+                    $buktiDokumen->file_path = $attachment->file_path;
+                    $buktiDokumen->description = $attachment->description;
+                    $buktiDokumen->save();
+                }
             }
 
             DB::commit();

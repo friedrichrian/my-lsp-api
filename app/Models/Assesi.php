@@ -32,4 +32,9 @@ class Assesi extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function apl02Submissions()
+    {
+        return $this->hasMany(FormApl02Submission::class);
+    }
 }
