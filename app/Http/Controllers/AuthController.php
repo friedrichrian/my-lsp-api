@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Jurusan;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -14,62 +12,61 @@ class AuthController extends Controller
     public function jurusanIndex()
     {
         $jurusan = Jurusan::all();
-        return response()->json($jurusan);
+
+        if ($jurusan->isEmpty()) {
+            return response()->json(['message' => 'No jurusan found'], 404);
+        }
+
+        return response()->json($jurusan, 200);
     }
-    
-    public function register(Request $request){
 
+    public function register(Request $request)
+    {
         $fields = $request->validate([
-            'username' => 'required',
+            'username' => 'required|string|max:50',
             'jurusan_id' => 'nullable|exists:jurusan,id',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6'
+            'email' => 'required|email|max:100|unique:users',
+            'password' => 'required|string|min:6|max:50'
         ]);
-        
-        $fields['password'] = bcrypt($fields['password']);
-        
-        $user = User::create($fields);
 
-        $token = $user->createToken($request->username);
+        $fields['password'] = Hash::make($fields['password']);
+
+        $user = User::create($fields);
 
         return response()->json([
             'message' => 'User created successfully',
-            'token' => $token->plainTextToken,
-            'user' => $user
+            'user' => $user->only(['id', 'username', 'email', 'jurusan_id'])
         ], 201);
     }
 
-    public function login(Request $request){
+    public function login(Request $request)
+    {
         $request->validate([
-            'input' => 'required',
-            'password' => 'required'
+            'input' => 'required|string',
+            'password' => 'required|string'
         ]);
 
-        $email = User::where('email', $request->input)->first();
-        $username = User::where('username', $request->input)->first();
+        $user = User::where('email', $request->input)
+            ->orWhere('username', $request->input)
+            ->first();
 
-        if(!$email && !$username){
-            return response()->json(['message' => 'User not found'], 404);
-        }
-        
-        $user = $email ?: $username;
-        
-        if((!$email || !$username) && !Hash::check($request->password, $user->password)){
-            return response()->json(['message' => 'Wrong email or Password'], 401);
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $token = $user->createToken($user->username);
+        $token = $user->createToken('Login Token');
 
-        return [
+        return response()->json([
             'message' => 'login success',
             'token' => $token->plainTextToken,
-            'user' => $user
-        ];
+            'user' => $user->only(['id', 'username', 'email', 'jurusan_id'])
+        ], 200);
     }
 
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $request->user()->tokens()->delete();
 
-        return ['message' => 'logout success'];
+        return response()->json(['message' => 'logout success'], 200);
     }
 }
