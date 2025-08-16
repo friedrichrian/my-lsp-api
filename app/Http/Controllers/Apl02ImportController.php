@@ -397,7 +397,16 @@ class Apl02ImportController extends Controller
         );
 
         // Delete existing related data if exists
-        $schema->units()->delete();
+        $schema->units()->each(function($unit) {
+            // Delete child elements and their KUKs first
+            $unit->elements()->each(function($element) {
+                $element->kriteriaUntukKerja()->delete();
+            });
+            $unit->elements()->delete();
+            
+            // Then delete the unit
+            $unit->delete();
+        });
 
         foreach ($units as $unitData) {
             // Ensure judul_unit is not null

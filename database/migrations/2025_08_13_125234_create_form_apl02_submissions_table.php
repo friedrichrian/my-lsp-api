@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('apl02_attachments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('submission_detail_id')->constrained('apl02_submission_details');
+            $table->foreignId('submission_detail_id')->constrained('apl02_submission_details')->onDelete('cascade');
             $table->foreignId('bukti_id')->constrained('bukti_dokumen_assesi');
             $table->timestamps();
         });
