@@ -19,6 +19,7 @@ use App\Models\AssesiSubmission;
 use App\Models\FormApl01Attachments;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class AssesmentController extends Controller
 {
@@ -52,67 +53,45 @@ class AssesmentController extends Controller
 
         DB::beginTransaction();
         try {
-            $formApl01 = FormApl01::create([
-                'user_id' => auth()->id(),
-                'nama_lengkap' => $validated['nama_lengkap'],
-                'no_ktp' => $validated['no_ktp'],
-                'tanggal_lahir' => $validated['tanggal_lahir'],
-                'tempat_lahir' => $validated['tempat_lahir'],
-                'jenis_kelamin' => $validated['jenis_kelamin'],
-                'kebangsaan' => $validated['kebangsaan'],
-                'alamat_rumah' => $validated['alamat_rumah'],
-                'kode_pos' => $validated['kode_pos'],
-                'no_telepon_rumah' => $validated['no_telepon_rumah'],
-                'no_telepon_kantor' => $validated['no_telepon_kantor'],
-                'no_telepon' => $validated['no_telepon'],
-                'email' => $validated['email'],
-                'kualifikasi_pendidikan' => $validated['kualifikasi_pendidikan'],
-                'nama_institusi' => $validated['nama_institusi'],
-                'jabatan' => $validated['jabatan'],
-                'alamat_kantor' => $validated['alamat_kantor'],
-                'kode_pos_kantor' => $validated['kode_pos_kantor'],
-                'fax_kantor' => $validated['fax_kantor'],
-                'email_kantor' => $validated['email_kantor'],
-                'status' => $validated['status']
-            ]);
+            $formApl01 = FormApl01::create(array_merge($validated, [
+                'user_id' => auth()->id()
+            ]));
 
             foreach ($validated['attachments'] as $attachment) {
-                // Generate a unique filename
                 $file = $attachment['file'];
-                $filename = uniqid().'_'.$file->getClientOriginalName();
-                $path = 'formapl01/'.$formApl01->id.'/'.$filename;
+                $filename = uniqid() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('formapl01/' . $formApl01->id, $filename, 'private');
 
-                // Get file contents and encrypt
-                $encryptedContents = encrypt(file_get_contents($file->getRealPath()));
-
-                // Store using file_put_contents for encrypted data
-                $fullPath = Storage::path($path);
-                Storage::makeDirectory(dirname($path));
-                file_put_contents($fullPath, $encryptedContents);
-
-                // Create attachment record
                 FormApl01Attachments::create([
                     'form_apl01_id' => $formApl01->id,
                     'nama_dokumen' => $file->getClientOriginalName(),
-                    'file_path' => 'private/'.$path,
-                    'description' => $attachment['description'] ?? null
+                    'file_path' => $path,
+                    'description' => $attachment['description']
                 ]);
             }
+
             DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Form APL01 created successfully',
+                'data' => $formApl01
+            ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Form APL01 Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
             return response()->json([
+                'success' => false,
                 'message' => 'Failed to create Form APL01',
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred. Please try again later.'
             ], 500);
         }
-
-        return response()->json([
-            'message' => 'Form APL01 created successfully'
-        ], 201);
     }
 
-    public function formApl02(Request $request) {
+    public function formApl02(Request $request)
+    {
         $validated = $request->validate([
             'skema_id' => 'required|exists:schemas,id',
             'submissions' => 'required|array',
@@ -124,7 +103,9 @@ class AssesmentController extends Controller
             'submissions.*.elemen.*.bukti_yang_relevan' => 'required|array',
             'submissions.*.elemen.*.bukti_yang_relevan.*.bukti_description' => [
                 'required',
-                Rule::exists('bukti_dokumen_assesi', 'description')->where('assesi_id', auth()->user()->assesi->id)
+                Rule::exists('bukti_dokumen_assesi', 'description')->where(function ($query) {
+                    $query->where('assesi_id', auth()->user()->assesi->id);
+                })
             ]
         ]);
 
@@ -135,13 +116,26 @@ class AssesmentController extends Controller
 
         DB::beginTransaction();
         try {
+            // Create the main submission
             $mainSubmission = $assesi->apl02Submissions()->create([
                 'skema_id' => $validated['skema_id'],
                 'submission_date' => now()
             ]);
 
+            // Preload all relevant bukti dokumen for efficiency
+            $buktiDescriptions = collect($validated['submissions'])
+                ->pluck('elemen.*.bukti_yang_relevan.*.bukti_description')
+                ->flatten();
+
+            $buktiDokumenMap = BuktiDokumenAssesi::whereIn('description', $buktiDescriptions)
+                ->where('assesi_id', $assesi->id)
+                ->get()
+                ->keyBy('description');
+
+            // Process each submission
             foreach ($validated['submissions'] as $unit) {
                 foreach ($unit['elemen'] as $elemen) {
+                    // Create submission details
                     $submission = $mainSubmission->details()->create([
                         'unit_ke' => $unit['unit_ke'],
                         'kode_unit' => $unit['kode_unit'],
@@ -149,10 +143,13 @@ class AssesmentController extends Controller
                         'kompetensinitas' => $elemen['kompetensinitas']
                     ]);
 
+                    // Attach relevant bukti dokumen
                     foreach ($elemen['bukti_yang_relevan'] as $bukti) {
-                        $buktiDokumen = BuktiDokumenAssesi::where('description', $bukti['bukti_description'])
-                            ->where('assesi_id', $assesi->id)
-                            ->firstOrFail();
+                        $buktiDokumen = $buktiDokumenMap[$bukti['bukti_description']] ?? null;
+
+                        if (!$buktiDokumen) {
+                            throw new \Exception("Bukti dokumen not found: " . $bukti['bukti_description']);
+                        }
 
                         $submission->attachments()->create([
                             'bukti_id' => $buktiDokumen->id
@@ -163,22 +160,22 @@ class AssesmentController extends Controller
 
             DB::commit();
             return response()->json([
+                'success' => true,
                 'message' => 'Full APL02 submission successful',
                 'submission_id' => $mainSubmission->id
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('APL02 Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
             return response()->json([
+                'success' => false,
                 'message' => 'Failed to submit APL02',
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred. Please try again later.'
             ], 500);
         }
     }
 
-    public function debug(Request $request){
-        $user = auth()->user()->assesi;
-        $assesi = Assesi::where('user_id', $user->id)
-            ->get();
-        return response()->json($user);
-    }
 }
