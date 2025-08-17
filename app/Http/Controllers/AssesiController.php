@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Assesi;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AssesiController extends Controller
 {
@@ -13,17 +14,17 @@ class AssesiController extends Controller
     {
         $validated = $request->validate([
             'username' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'email' => 'required|email|unique:users|max:255',
+            'password' => 'required|string|min:6|max:50',
             'jurusan_id' => 'required|exists:jurusan,id',
             'nama_lengkap' => 'required|string|max:255',
             'no_ktp' => 'required|string|max:16|unique:assesi,no_ktp|regex:/^[0-9]+$/',
             'tempat_lahir' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
             'alamat' => 'required|string|max:255',
-            'no_telepon' => 'required|string|max:15',
+            'no_telepon' => 'required|string|max:15|regex:/^[0-9]+$/',
             'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'kode_pos' => 'required|string|max:10',
+            'kode_pos' => 'required|string|max:10|regex:/^[0-9]+$/',
             'kualifikasi_pendidikan' => 'required|string|max:255',
         ]);
 
@@ -52,61 +53,95 @@ class AssesiController extends Controller
             DB::commit();
 
             return response()->json([
+                'success' => true,
                 'message' => 'Assesi created successfully',
-                'assesi' => $assesi
+                'data' => $assesi
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to create Assesi: ' . $e->getMessage(), [
+                'request_data' => $request->all()
+            ]);
+
             return response()->json([
+                'success' => false,
                 'message' => 'Failed to create Assesi',
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred. Please try again later.'
             ], 500);
         }
     }
 
     public function index()
     {
-        $assesis = Assesi::with('user', 'jurusan')->get();
+        $assesis = Assesi::with(['user', 'jurusan'])->get();
+
         return response()->json([
-            'assesi' => [
-                'count' => $assesis->count(),
-                'message' => 'List of Assesi',
-                'status' => 'success',
-                'data' => $assesis
-            ]
+            'success' => true,
+            'message' => 'List of Assesi',
+            'data' => $assesis,
+            'count' => $assesis->count()
         ], 200);
     }
 
     public function update(Request $request, $id)
     {
         $assesi = Assesi::findOrFail($id);
+
         $validated = $request->validate([
             'nama_lengkap' => 'sometimes|required|string|max:255',
             'no_ktp' => 'sometimes|required|string|max:16|unique:assesi,no_ktp,' . $assesi->id . '|regex:/^[0-9]+$/',
             'tempat_lahir' => 'sometimes|required|string|max:255',
             'tanggal_lahir' => 'sometimes|required|date',
             'alamat' => 'sometimes|required|string|max:255',
-            'no_telepon' => 'sometimes|required|string|max:15',
+            'no_telepon' => 'sometimes|required|string|max:15|regex:/^[0-9]+$/',
             'jenis_kelamin' => 'sometimes|required|in:Laki-laki,Perempuan',
-            'kode_pos' => 'sometimes|required|string|max:10',
+            'kode_pos' => 'sometimes|required|string|max:10|regex:/^[0-9]+$/',
             'kualifikasi_pendidikan' => 'sometimes|required|string|max:255',
         ]);
 
-        $assesi->update($validated);
+        try {
+            $assesi->update($validated);
 
-        return response()->json([
-            'message' => 'Assesi updated successfully',
-            'assesi' => $assesi
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Assesi updated successfully',
+                'data' => $assesi
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Failed to update Assesi: ' . $e->getMessage(), [
+                'assesi_id' => $id,
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update Assesi',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
     }
 
     public function destroy($id)
     {
         $assesi = Assesi::findOrFail($id);
-        $assesi->delete();
 
-        return response()->json([
-            'message' => 'Assesi deleted successfully'
-        ], 200);
+        try {
+            $assesi->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assesi deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete Assesi: ' . $e->getMessage(), [
+                'assesi_id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete Assesi',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
     }
 }
