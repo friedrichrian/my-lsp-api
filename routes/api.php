@@ -9,6 +9,7 @@ use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\ApprovementController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Apl02ImportController;
+use App\Http\Controllers\AssesmentImportController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -50,6 +51,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/apl02/import', [Apl02ImportController::class, 'import']);
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
+    Route::post('/import', [AssesmentImportController::class, 'import']);
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
