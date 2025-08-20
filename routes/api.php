@@ -60,6 +60,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesor', [AssesorController::class, 'index']);
 
     // Routes Assesment for Assesor
-    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex']);
+    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
     Route::get('/debug', [AssesmentController::class, 'debug']);
 });
