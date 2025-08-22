@@ -62,4 +62,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
     Route::get('/debug', [AssesmentController::class, 'debug']);
+
+    // Routes FR.IA.01 - Ceklis Observasi Aktivitas
+    Route::prefix('fr-ia01')->group(function () {
+        Route::post('/sessions', [App\Http\Controllers\FrIa01Controller::class, 'store']);
+        Route::get('/sessions/{id}', [App\Http\Controllers\FrIa01Controller::class, 'show']);
+        Route::put('/sessions/{id}/result', [App\Http\Controllers\FrIa01Controller::class, 'updateAssessmentResult']);
+        Route::delete('/sessions/{id}', [App\Http\Controllers\FrIa01Controller::class, 'destroy']);
+        
+        Route::put('/kuks/{id}', [App\Http\Controllers\FrIa01Controller::class, 'updateKuk']);
+        Route::put('/groups/{id}/feedback', [App\Http\Controllers\FrIa01Controller::class, 'updateGroupFeedback']);
+    });
 });
