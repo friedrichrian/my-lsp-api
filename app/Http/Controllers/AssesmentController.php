@@ -20,9 +20,161 @@ use App\Models\FormApl01Attachments;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Models\Assesment;
 
 class AssesmentController extends Controller
 {
+    public function index()
+    {
+        $assessments = Assesment::with(['skema', 'admin', 'assesor'])->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'List of assessments',
+            'data' => $assessments
+        ]);
+    }
+    public function createAssesment(Request $request)
+    {
+        $validated = $request->validate([
+            'skema_id' => 'required|exists:schemas,id',
+            'admin_id' => 'required|exists:admin,id_admin',
+            'assesor_id' => 'required|exists:assesor,id',
+            'tanggal_assessment' => 'required|date',
+            'status' => 'required|in:expired,active',
+        ], [
+            'skema_id.required' => 'Skema harus diisi.',
+            'skema_id.exists'   => 'Skema yang dipilih tidak ditemukan.',
+
+            'admin_id.required' => 'Admin harus diisi.',
+            'admin_id.exists'   => 'Admin yang dipilih tidak ditemukan.',
+
+            'assesor_id.required' => 'Assesor harus diisi.',
+            'assesor_id.exists'   => 'Assesor yang dipilih tidak ditemukan.',
+
+            'tanggal_assessment.required' => 'Tanggal assessment wajib diisi.',
+            'tanggal_assessment.date'     => 'Format tanggal assessment tidak valid.',
+
+            'status.required' => 'Status harus diisi.',
+            'status.in'       => 'Status hanya boleh bernilai expired atau active.',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $assessment = Assesment::create([
+                'skema_id' => $validated['skema_id'],
+                'admin_id' => $validated['admin_id'],
+                'assesor_id' => $validated['assesor_id'],
+                'tanggal_assessment' => $validated['tanggal_assessment'],
+                'status' => $validated['status'],
+                'tuk' => $request->input('tuk', null), // optional
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment created successfully',
+                'data' => $assessment
+            ], 201);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat assessment',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+    public function updateAssesment(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'id' => 'required|exists:assesments,id',
+            'admin_id' => 'sometimes|exists:admin,id',
+            'status' => 'sometimes|in:expired,active',
+            'tuk' => 'sometimes|string|max:255',
+            'skema_id' => 'sometimes|exists:schemas,id',
+            'assesor_id' => 'sometimes|exists:assessors,id',
+            'tanggal_assessment' => 'sometimes|date'
+            ]);
+
+        DB::beginTransaction();
+        try {
+            $assessment = Assesment::findOrFail($id);
+            $assessment->update($validated);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment updated successfully',
+                'data' => $assessment
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Assessment Update Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update assessment',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
+    public function deleteAssesment($id)
+    {
+        DB::beginTransaction();
+        try {
+            $assessment = Assesment::findOrFail($id);
+            $assessment->delete();
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Assessment Deletion Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'assessment_id' => $id
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete assessment',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $assessment = Assesment::with(['skema', 'admin', 'assesor'])->findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment details',
+                'data' => $assessment
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Assessment Show Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'assessment_id' => $id
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Assessment not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
     public function formApl01(Request $request)
     {
         $validated = $request->validate([

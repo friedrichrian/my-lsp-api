@@ -9,6 +9,8 @@ use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\ApprovementController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Apl02ImportController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AssesmentAsesiController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -50,6 +52,13 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/apl02/import', [Apl02ImportController::class, 'import']);
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
+
+    Route::post('/assesment', [AssesmentController::class, 'createAssesment']);
+    Route::get('/assesment', [AssesmentController::class, 'index']);
+
+    Route::post('/admin', [AdminController::class, 'store']);
+    Route::get('/admin', [AdminController::class, 'index']);
+    Route::put('/admin/{id}', [AdminController::class, 'update']);
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -58,7 +67,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formapl02', [AssesmentController::class, 'formApl02']);
     Route::get('/assesi', [AssesiController::class, 'index']);
     Route::get('/assesor', [AssesorController::class, 'index']);
-
+    Route::get('/assesment', [AssesmentController::class, 'index']);
+    Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
+    Route::post('/assesment/asesi', [AssesmentAsesiController::class, 'store']);
+    Route::get('/assesment/asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
+    
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
     Route::get('/debug', [AssesmentController::class, 'debug']);
