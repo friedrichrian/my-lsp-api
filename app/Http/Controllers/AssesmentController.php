@@ -39,23 +39,28 @@ class AssesmentController extends Controller
             'skema_id' => 'required|exists:schemas,id',
             'admin_id' => 'required|exists:admin,id_admin',
             'assesor_id' => 'required|exists:assesor,id',
-            'tanggal_assessment' => 'required|date',
+            'tanggal_assesment' => 'required|date',
             'status' => 'required|in:expired,active',
         ], [
-            'skema_id.required' => 'Skema harus diisi.',
-            'skema_id.exists'   => 'Skema yang dipilih tidak ditemukan.',
+            // Skema
+            'skema_id.required' => 'Anda wajib memilih skema sebelum melanjutkan.',
+            'skema_id.exists'   => 'Skema yang Anda pilih tidak tersedia dalam sistem.',
 
-            'admin_id.required' => 'Admin harus diisi.',
-            'admin_id.exists'   => 'Admin yang dipilih tidak ditemukan.',
+            // Admin
+            'admin_id.required' => 'Data admin harus diisi.',
+            'admin_id.exists'   => 'Admin dengan ID yang dimasukkan tidak ditemukan.',
 
-            'assesor_id.required' => 'Assesor harus diisi.',
-            'assesor_id.exists'   => 'Assesor yang dipilih tidak ditemukan.',
+            // Asesor
+            'assesor_id.required' => 'Silakan pilih asesor yang akan melakukan asesmen.',
+            'assesor_id.exists'   => 'Asesor yang dipilih tidak tersedia.',
 
-            'tanggal_assessment.required' => 'Tanggal assessment wajib diisi.',
-            'tanggal_assessment.date'     => 'Format tanggal assessment tidak valid.',
+            // Tanggal
+            'tanggal_assesment.required' => 'Tanggal asesmen wajib diisi.',
+            'tanggal_assesment.date'     => 'Format tanggal asesmen tidak valid (contoh: 2025-08-25).',
 
-            'status.required' => 'Status harus diisi.',
-            'status.in'       => 'Status hanya boleh bernilai expired atau active.',
+            // Status
+            'status.required' => 'Status asesmen wajib dipilih.',
+            'status.in'       => 'Status asesmen hanya boleh bernilai "expired" atau "active".',
         ]);
 
         DB::beginTransaction();
@@ -64,7 +69,7 @@ class AssesmentController extends Controller
                 'skema_id' => $validated['skema_id'],
                 'admin_id' => $validated['admin_id'],
                 'assesor_id' => $validated['assesor_id'],
-                'tanggal_assessment' => $validated['tanggal_assessment'],
+                'tanggal_assesment' => $validated['tanggal_assesment'],
                 'status' => $validated['status'],
                 'tuk' => $request->input('tuk', null), // optional
             ]);
@@ -73,7 +78,7 @@ class AssesmentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Assessment created successfully',
+                'message' => 'Assessment berhasil dibuat',
                 'data' => $assessment
             ], 201);
 
@@ -82,11 +87,12 @@ class AssesmentController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membuat assessment',
-                'error'   => $e->getMessage(),
+                'message' => 'Terjadi kesalahan saat membuat assessment. Silakan coba lagi.',
+                'error_detail' => $e->getMessage(), // untuk debug
             ], 500);
         }
     }
+
 
 
 
@@ -99,7 +105,7 @@ class AssesmentController extends Controller
             'tuk' => 'sometimes|string|max:255',
             'skema_id' => 'sometimes|exists:schemas,id',
             'assesor_id' => 'sometimes|exists:assessors,id',
-            'tanggal_assessment' => 'sometimes|date'
+            'tanggal_assesment' => 'sometimes|date'
             ]);
 
         DB::beginTransaction();

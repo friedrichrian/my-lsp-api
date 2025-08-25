@@ -16,7 +16,7 @@ class ApprovementMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if(!$user->assesi) {
+        if(!$user->assesi && $user->role === 'assesi'){ 
             return response()->json(['error' => 'Account not yet approved. Please wait for administrator approval.'], 403);
         }
         return $next($request);

@@ -21,7 +21,7 @@ return new class extends Migration
                 ->on('admin')
                 ->onDelete('cascade');
             $table->foreignId('assesor_id')->constrained('assesor')->onDelete('cascade');
-            $table->date('tanggal_assessment');
+            $table->date('tanggal_assesment');
             $table->enum('status', ['expired', 'active']);
             $table->string('tuk');
             $table->timestamps();
