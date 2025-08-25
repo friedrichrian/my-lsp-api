@@ -12,7 +12,7 @@ use App\Models\FormApl02Attachments;
 use App\Models\Assesor;
 use App\Models\FormApl02SubmissionDetails;
 use Illuminate\Validation\Rule;
-use App\Models\Skema;
+use App\Models\Schema;
 use App\Models\Jurusan;
 use App\Models\FormApl01Submission;
 use App\Models\AssesiSubmission;
@@ -26,7 +26,7 @@ class AssesmentController extends Controller
 {
     public function index()
     {
-        $assessments = Assesment::with(['skema', 'admin', 'assesor'])->get();
+        $assessments = Assesment::with(['schema', 'admin', 'assesor'])->get();
         return response()->json([
             'success' => true,
             'message' => 'List of assessments',

@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Apl02ImportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssesmentAsesiController;
+use App\Http\Controllers\JurusanController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -23,7 +24,7 @@ Route::middleware(['throttle:10,1'])->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum'); 
     });
-    Route::get('/jurusan', [AuthController::class, 'jurusanIndex']);
+   
 
     Route::get('/user', [UserController::class, 'show'])->middleware('auth:sanctum');
 });
@@ -71,6 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::post('/assesment/asesi', [AssesmentAsesiController::class, 'store']);
     Route::get('/assesment/asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
+     Route::get('/jurusan', [JurusanController::class, 'index']);
     
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
