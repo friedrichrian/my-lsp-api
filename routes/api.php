@@ -41,10 +41,16 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/assesor/{id}', [AssesorController::class, 'update']);
     Route::delete('/assesor/{id}', [AssesorController::class, 'destroy']);
 
+    //Jurusan routes
+    Route::post('/jurusan', [JurusanController::class, 'store']);
+    Route::put('/jurusan/{id}', [JurusanController::class, 'update']);
+    Route::delete('/jurusan/{id}', [JurusanController::class, 'destroy']);
+
     //Approvement Details routes
     Route::get('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
 
     //Approvement routes
+    Route::get('/assesment/formapl01', [ApprovementController::class, 'indexingFormApl01']);
     Route::post('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'approveFormApl01']);
 
     // Attachments routes
@@ -70,9 +76,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesor', [AssesorController::class, 'index']);
     Route::get('/assesment', [AssesmentController::class, 'index']);
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
+    Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
     Route::post('/assesment/asesi', [AssesmentAsesiController::class, 'store']);
     Route::get('/assesment/asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
-     Route::get('/jurusan', [JurusanController::class, 'index']);
+    Route::get('/jurusan', [JurusanController::class, 'index']);
+    Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
+
     
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');

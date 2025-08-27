@@ -25,6 +25,15 @@ class ApprovementController extends Controller
             ->header('Content-Disposition', 'inline; filename="'.$attachment->nama_dokumen.'"');
     }
 
+    public function indexingFormApl01(){
+        $formApl01s = FormApl01::with('user')->get();
+        try{
+            return response()->json(['message' => 'Form APL01 index', 'data' => $formApl01s], 200);
+        }catch(\Exception $e){
+            return response()->json(['message' => 'Error fetching Form APL01', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function showFormApl01($id)
     {
         $formApl01 = FormApl01::with('user', 'attachments')
