@@ -17,7 +17,7 @@ class ApprovementController extends Controller
     {
         $attachment = FormApl01Attachments::findOrFail($id);
 
-        $path = storage_path('app/' . $attachment->file_path);
+        $path = storage_path('app/private' . $attachment->file_path);
         $contents = decrypt(file_get_contents($path));
 
         return response($contents, 200)

@@ -216,15 +216,23 @@ class AssesmentController extends Controller
             ]));
 
             foreach ($validated['attachments'] as $attachment) {
+                // Generate a unique filename
                 $file = $attachment['file'];
-                $filename = uniqid() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('formapl01/' . $formApl01->id, $filename, 'private');
+                $filename = uniqid().'_'.$file->getClientOriginalName();
+                $path = 'formapl01/'.$formApl01->id.'/'.$filename;
 
+                // Get file contents and encrypt
+                $encryptedContents = encrypt(file_get_contents($file->getRealPath()));
+
+                // Store using Storage facade for better consistency
+                Storage::disk('private')->put($path, $encryptedContents);
+
+                // Create attachment record
                 FormApl01Attachments::create([
                     'form_apl01_id' => $formApl01->id,
                     'nama_dokumen' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'description' => $attachment['description']
+                    'file_path' => $path, // Simpan path tanpa 'private/' karena sudah menggunakan disk 'private'
+                    'description' => $attachment['description'] ?? null
                 ]);
             }
 
