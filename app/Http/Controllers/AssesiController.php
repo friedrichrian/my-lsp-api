@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Assesi;
+use App\Models\FormApl01;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -80,6 +81,26 @@ class AssesiController extends Controller
             'message' => 'List of Assesi',
             'data' => $assesis,
             'count' => $assesis->count()
+        ], 200);
+    }
+
+    public function show(Request $request)
+    {
+        $user_id = $request->user()->id;
+
+        $formApl01 = FormApl01::where('user_id', $user_id)->first();
+
+        if(!$formApl01) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Form APL01 has not been created'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Form APL01 retrieved successfully',
+            'data' => $formApl01->status
         ], 200);
     }
 

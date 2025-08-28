@@ -17,7 +17,6 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware(['throttle:10,1'])->group(function () {
     // Hanya 10 request per menit per user/IP
     Route::prefix('auth')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
@@ -27,7 +26,6 @@ Route::middleware(['throttle:10,1'])->group(function () {
    
 
     Route::get('/user', [UserController::class, 'show'])->middleware('auth:sanctum');
-});
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     //Assesi routes
@@ -82,7 +80,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/jurusan', [JurusanController::class, 'index']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
 
-    
+        Route::get('/formApl01', [AssesiController::class, 'show']);
+
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
     Route::get('/debug', [AssesmentController::class, 'debug']);
