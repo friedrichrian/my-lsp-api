@@ -12,6 +12,9 @@ use App\Models\FormApl02Attachments;
 use App\Models\FormApl02SubmissionDetail;
 use App\Models\FormAk01Submission;
 use App\Models\FormAk01Attachment;
+use App\Models\FormIa01Submission;
+use App\Models\FormIa01SubmissionDetail;
+use App\Models\FormIa01PenilaianLanjut;
 use App\Models\Assesor;
 use Illuminate\Validation\Rule;
 use App\Models\Schema;
@@ -260,6 +263,7 @@ class AssesmentController extends Controller
     {
         $validated = $request->validate([
             'skema_id' => 'required|exists:schemas,id',
+            'assesment_assesi_id' => 'required|exists:assesment_asesi,id',
             'submissions' => 'required|array',
             'submissions.*.unit_ke' => 'required|integer',
             'submissions.*.kode_unit' => 'required|string',
@@ -285,6 +289,7 @@ class AssesmentController extends Controller
             // Create the main submission
             $mainSubmission = $assesi->apl02Submissions()->create([
                 'skema_id' => $validated['skema_id'],
+                'assesment_asesi_id' => $validated['assesment_assesi_id'],
                 'submission_date' => now()
             ]);
 
@@ -412,6 +417,82 @@ class AssesmentController extends Controller
                 'success' => false,
                 'message' => 'Failed to create AK01 submission',
                 'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
+    public function formIa01(Request $request){
+        $validated = $request->validate([
+            'skema_id' => 'required|exists:schemas,id',
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
+            'submissions' => 'required|array',
+            'submissions.*.unit_ke' => 'required|integer',
+            'submissions.*.kode_unit' => 'required|string',
+            'submissions.*.elemen' => 'required|array',
+            'submissions.*.elemen.*.elemen_id' => 'required|exists:elements,id',
+            'submissions.*.elemen.*.skkni' => 'required|in:ya,tidak',
+            'submissions.*.elemen.*.penilaian_lanjut' => 'required|array',
+            'submissions.*.elemen.*.penilaian_lanjut.*.teks_penilaian' => 'required|string'
+        ]);
+
+        $assesor = auth()->user()->assesor;
+        if (!$assesor) {
+            return response()->json(['message' => 'Assesor not found'], 404);
+        }
+
+        
+
+        DB::beginTransaction();
+        try {
+            $assesment_assesi = Assesment_Asesi::where('id', $validated['assesment_asesi_id'])->first();
+            $assesi = Assesi::where('id', $assesment_assesi->assesi_id)->first();
+            // Create the main submission
+            $mainSubmission = FormIa01Submission::create([
+                'assesment_asesi_id' => $validated['assesment_asesi_id'],
+                'assesor_id' => $assesor->id,
+                'assesi_id' => $assesi->id,
+                'skema_id' => $validated['skema_id'],
+                'submission_date' => now()
+            ]);
+
+            // Process each submission
+            foreach ($validated['submissions'] as $unit) {
+                foreach ($unit['elemen'] as $elemen) {
+                    // Create submission details
+                    $submissionDetail = FormIa01SubmissionDetail::create([
+                        'submission_id' => $mainSubmission->id,
+                        'unit_ke' => $unit['unit_ke'],
+                        'kode_unit' => $unit['kode_unit'],
+                        'elemen_id' => $elemen['elemen_id'],
+                        'skkni' => $elemen['skkni']
+                    ]);
+
+                    // Create penilaian lanjut
+                    foreach ($elemen['penilaian_lanjut'] as $penilaian) {
+                        FormIa01PenilaianLanjut::create([
+                            'submission_detail_id' => $submissionDetail->id,
+                            'teks_penilaian' => $penilaian['teks_penilaian']
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Full IA01 submission successful',
+                'submission_id' => $mainSubmission->id
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('IA01 Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit IA01',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred. Please try again later.'
             ], 500);
         }
     }

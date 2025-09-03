@@ -11,6 +11,7 @@ class FormApl02Submission extends Model
         'skema_id',
         'submission_date',
         'assesi_id',
+        'assesment_asesi_id'
     ];
 
     public function assesi()

@@ -56,7 +56,7 @@ class User extends Authenticatable
 
     public function assesor()
     {
-        return $this->hasOne(Assesor::class);
+        return $this->hasOne(Assesor::class, );
     }
 
     public function isAdmin(): bool

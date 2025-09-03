@@ -72,6 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
     Route::post('/assesment/formapl02', [AssesmentController::class, 'formApl02']);
     Route::post('/assesment/formak01', [AssesmentController::class, 'formAk01']);
+    Route::post('/assesment/formia01', [AssesmentController::class, 'formIa01']);
 
     //Approve by user
     Route::post('/user/assesment/formak01/{id}', [ApprovementController::class, 'approveFormAk01ByUser']);
