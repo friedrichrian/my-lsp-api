@@ -33,4 +33,9 @@ class Assesment extends Model
         return $this->belongsTo(Assesor::class, 'assesor_id'); 
         // sesuaikan foreign key dan model
     }
+
+    public function assesment_asesi()
+    {
+        return $this->hasMany(Assesment_Asesi::class, 'assesment_id');
+    }
 }

@@ -26,6 +26,9 @@ class FormApl02Submission extends Model
         return $this->hasMany(FormApl02SubmissionDetail::class, 'submission_id');
     }
 
-
+    public function assesment_asesi()
+    {
+        return $this->belongsTo(Assesment_Asesi::class, 'assesment_asesi_id');
+    }
 
 }

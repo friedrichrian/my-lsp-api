@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('assesment_id')->constrained('assesments')->onDelete('cascade');
             $table->foreignId('assesi_id')->constrained('assesi')->onDelete('cascade');
             $table->enum('status', ['k', 'bk'])->default('k'); // k: Kelayakan, bk: Belum Kelayakan
-
+            $table->timestamps();
         });
     }
 

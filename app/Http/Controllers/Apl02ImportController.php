@@ -500,4 +500,25 @@ class Apl02ImportController extends Controller
             })
         ]);
     }
+
+    public function destroy($id)
+    {
+        $schema = Schema::findOrFail($id);
+        $schema->units()->each(function($unit) {
+            // Delete child elements and their KUKs first
+            $unit->elements()->each(function($element) {
+                $element->kriteriaUntukKerja()->delete();
+            });
+            $unit->elements()->delete();
+            
+            // Then delete the unit
+            $unit->delete();
+        });
+        $schema->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Schema and related data deleted successfully'
+        ]);
+    }
 }

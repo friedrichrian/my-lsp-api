@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Models\Assesment;
+use App\Models\Assesment_Asesi;
 
 class AssesmentController extends Controller
 {
@@ -93,18 +94,15 @@ class AssesmentController extends Controller
         }
     }
 
-
-
-
     public function updateAssesment(Request $request, $id)
     {
         $validated = $request->validate([
             'id' => 'required|exists:assesments,id',
-            'admin_id' => 'sometimes|exists:admin,id',
+            'admin_id' => 'sometimes|exists:admin,id_admin',
             'status' => 'sometimes|in:expired,active',
             'tuk' => 'sometimes|string|max:255',
             'skema_id' => 'sometimes|exists:schemas,id',
-            'assesor_id' => 'sometimes|exists:assessors,id',
+            'assesor_id' => 'sometimes|exists:assesor,id',
             'tanggal_assesment' => 'sometimes|date'
             ]);
 
@@ -344,4 +342,92 @@ class AssesmentController extends Controller
         }
     }
 
+    public function assesmentAssesiStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'assesment_id' => 'required|exists:assesments,id',
+            'status' => 'required|in:mengerjakan,k,bk',
+        ], [
+            'assesment_id.required' => 'Anda wajib memilih asesmen sebelum melanjutkan.',
+            'assesment_id.exists' => 'Asesmen yang Anda pilih tidak tersedia dalam sistem.',
+            'status.required' => 'Status wajib diisi.',
+            'status.in' => 'Status hanya boleh bernilai "mengerjakan", "k", atau "bk".',
+        ]);
+
+        $Assesi = Assesi::firstWhere('user_id', auth()->user()->id);
+        
+        if(!$Assesi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assesi not found for the authenticated user'
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            $assesment_assesi = Assesment_Asesi::updateOrCreate(
+                [
+                    'assesment_id' => $validated['assesment_id'],
+                    'assesi_id'    => $Assesi->id,
+                ],
+                [
+                    'status'       => $validated['status'],
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status asesmen asesi berhasil diperbarui',
+                'data'    => $assesment_assesi
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Update Status Assesment Asesi Error: ' . $e->getMessage(), [
+                'user_id'      => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui status asesmen asesi',
+                'error'   => 'Terjadi kesalahan tak terduga. Silakan coba lagi nanti.'
+            ], 500);
+        }
+
+    }
+
+    public function getAssesmentAssesiStatus(Request $request)
+    {
+        $Assesi = Assesi::firstWhere('user_id', auth()->user()->id);
+        
+        if(!$Assesi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assesi not found for the authenticated user'
+            ], 404);
+        }
+
+        try {
+            
+            $assesment_assesi = Assesment_Asesi::firstWhere('assesi_id', $Assesi->id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Status asesmen asesi berhasil diambil',
+                'data' => $assesment_assesi
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get Status Assesment Asesi Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'assesi_id' => $id
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil status asesmen asesi',
+                'error' => 'Terjadi kesalahan tak terduga. Silakan coba lagi nanti.'
+            ], 500);
+        }
+    }
 }

@@ -34,8 +34,4 @@ class AssessmentSession extends Model
         return $this->belongsTo(Assesi::class);
     }
 
-    public function observationGroups(): HasMany
-    {
-        return $this->hasMany(ObservationGroup::class);
-    }
 }

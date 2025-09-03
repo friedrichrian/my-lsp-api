@@ -25,6 +25,7 @@ Route::get('/user', function (Request $request) {
     });
    
 
+    Route::get('/jurusan', [JurusanController::class, 'index']);
     Route::get('/user', [UserController::class, 'show'])->middleware('auth:sanctum');
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
@@ -57,6 +58,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/apl02/import', [Apl02ImportController::class, 'import']);
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
+    Route::delete('/apl02/{id}', [Apl02ImportController::class, 'destroy']);
 
     Route::post('/assesment', [AssesmentController::class, 'createAssesment']);
     Route::get('/assesment', [AssesmentController::class, 'index']);
@@ -74,10 +76,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesor', [AssesorController::class, 'index']);
     Route::get('/assesment', [AssesmentController::class, 'index']);
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
+    Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
     Route::post('/assesment/asesi', [AssesmentAsesiController::class, 'store']);
     Route::get('/assesment/asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
-    Route::get('/jurusan', [JurusanController::class, 'index']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
 
         Route::get('/formApl01', [AssesiController::class, 'show']);
@@ -86,14 +88,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
     Route::get('/debug', [AssesmentController::class, 'debug']);
 
-    // Routes FR.IA.01 - Ceklis Observasi Aktivitas
-    Route::prefix('fr-ia01')->group(function () {
-        Route::post('/sessions', [App\Http\Controllers\FrIa01Controller::class, 'store']);
-        Route::get('/sessions/{id}', [App\Http\Controllers\FrIa01Controller::class, 'show']);
-        Route::put('/sessions/{id}/result', [App\Http\Controllers\FrIa01Controller::class, 'updateAssessmentResult']);
-        Route::delete('/sessions/{id}', [App\Http\Controllers\FrIa01Controller::class, 'destroy']);
-        
-        Route::put('/kuks/{id}', [App\Http\Controllers\FrIa01Controller::class, 'updateKuk']);
-        Route::put('/groups/{id}/feedback', [App\Http\Controllers\FrIa01Controller::class, 'updateGroupFeedback']);
-    });
+    Route::get('/status/asesi/assesment', [AssesmentController::class, 'getAssesmentAssesiStatus']);
+    Route::post('/status/asesi/assesment', [AssesmentController::class, 'assesmentAssesiStatus']);
 });

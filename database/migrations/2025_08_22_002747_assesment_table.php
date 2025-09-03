@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
             $table->unsignedBigInteger('admin_id');
             $table->foreign('admin_id')
-                ->references('admin_id')
+                ->references('id_admin')
                 ->on('admin')
                 ->onDelete('cascade');
             $table->foreignId('assesor_id')->constrained('assesor')->onDelete('cascade');

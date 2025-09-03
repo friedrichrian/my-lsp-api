@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('assesi_id')->constrained('assesi')->onDelete('cascade');
             $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
+            $table->foreignId('assesor_id')->nullable()->constrained('assesor')->onDelete('cascade');
             $table->dateTime('submission_date');
             $table->timestamps();
         });

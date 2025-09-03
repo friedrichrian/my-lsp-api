@@ -14,7 +14,7 @@ class AssesiController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
             'email' => 'required|email|unique:users|max:255',
             'password' => 'required|string|min:6|max:50',
             'jurusan_id' => 'required|exists:jurusan,id',

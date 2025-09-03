@@ -17,7 +17,7 @@ class ApprovementController extends Controller
     {
         $attachment = FormApl01Attachments::findOrFail($id);
 
-        $path = storage_path('app/private' . $attachment->file_path);
+        $path = storage_path('app/private/' . $attachment->file_path);
         $contents = decrypt(file_get_contents($path));
 
         return response($contents, 200)
@@ -26,7 +26,7 @@ class ApprovementController extends Controller
     }
 
     public function indexingFormApl01(){
-        $formApl01s = FormApl01::with('user')->get();
+        $formApl01s = FormApl01::with('user', 'attachments')->get();
         try{
             return response()->json(['message' => 'Form APL01 index', 'data' => $formApl01s], 200);
         }catch(\Exception $e){
