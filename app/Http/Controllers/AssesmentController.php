@@ -9,8 +9,10 @@ use App\Models\Element;
 use App\Models\BuktiDokumenAssesi;
 use App\Models\FormApl02Submission;
 use App\Models\FormApl02Attachments;
+use App\Models\FormApl02SubmissionDetail;
+use App\Models\FormAk01Submission;
+use App\Models\FormAk01Attachment;
 use App\Models\Assesor;
-use App\Models\FormApl02SubmissionDetails;
 use Illuminate\Validation\Rule;
 use App\Models\Schema;
 use App\Models\Jurusan;
@@ -342,16 +344,86 @@ class AssesmentController extends Controller
         }
     }
 
+    public function formAk01(Request $request)
+    {
+        $validated = $request->validate([
+            'assesment_id' => 'required|exists:assesments,id',
+            'skema_id' => 'required|exists:schemas,id',
+            'attachments' => 'required|array',
+            'attachments.*.file' => 'required|mimes:pdf|max:2048',
+            'attachments.*.description' => 'required|string|max:255'
+        ]);
+
+        $assesment = Assesment::find($validated['assesment_id']);
+        if (!$assesment) {
+            return response()->json(['message' => 'Assessment not found'], 404);
+        }
+
+        $assesor = $assesment->assesor;
+        $assesorUser = Assesor::firstWhere('id', auth()->user()->id);
+        if (!$assesor->id || $assesor->id !== $assesorUser->id) {
+            return response()->json(['message' => 'You are not the Assesor'], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Create the main AK01 submission
+            $ak01Submission = FormAk01Submission::Create([
+                'assesment_id' => $validated['assesment_id'],
+                'skema_id' => $validated['skema_id'],
+                'submission_date' => now()
+            ]);
+
+            // Process each attachment
+            foreach ($validated['attachments'] as $attachment) {
+                // Generate a unique filename
+                $file = $attachment['file'];
+                $filename = uniqid().'_'.$file->getClientOriginalName();
+                $path = 'formak01/'.$ak01Submission->id.'/'.$filename;
+
+                // Get file contents and encrypt
+                $encryptedContents = encrypt(file_get_contents($file->getRealPath()));
+
+                // Store using Storage facade for better consistency
+                Storage::disk('private')->put($path, $encryptedContents);
+
+                // Create attachment record
+                $ak01Submission->attachments()->create([
+                    'file_path' => $path,
+                    'description' => $attachment['description'] ?? null
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'AK01 submission created successfully',
+                'data' => $ak01Submission
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('AK01 Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create AK01 submission',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
     public function assesmentAssesiStatus(Request $request)
     {
         $validated = $request->validate([
             'assesment_id' => 'required|exists:assesments,id',
-            'status' => 'required|in:mengerjakan,k,bk',
+            'status' => 'required|in:mengerjakan,belum,selesai',
         ], [
             'assesment_id.required' => 'Anda wajib memilih asesmen sebelum melanjutkan.',
             'assesment_id.exists' => 'Asesmen yang Anda pilih tidak tersedia dalam sistem.',
             'status.required' => 'Status wajib diisi.',
-            'status.in' => 'Status hanya boleh bernilai "mengerjakan", "k", atau "bk".',
+            'status.in' => 'Status hanya boleh bernilai "mengerjakan", "belum", atau "selesai".',
         ]);
 
         $Assesi = Assesi::firstWhere('user_id', auth()->user()->id);
