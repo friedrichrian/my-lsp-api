@@ -14,7 +14,7 @@ use App\Http\Controllers\AssesmentAsesiController;
 use App\Http\Controllers\JurusanController;
 
 Route::get('/user', function (Request $request) {
-    return $request->user();
+    return auth()->user();
 })->middleware('auth:sanctum');
 
     // Hanya 10 request per menit per user/IP
@@ -72,6 +72,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
     Route::post('/assesment/formapl02', [AssesmentController::class, 'formApl02']);
     Route::post('/assesment/formak01', [AssesmentController::class, 'formAk01']);
+
+    //Approve by user
+    Route::post('/user/assesment/formak01/{id}', [ApprovementController::class, 'approveFormAk01ByUser']);
 
     Route::get('/assesi', [AssesiController::class, 'index']);
     Route::get('/assesor', [AssesorController::class, 'index']);

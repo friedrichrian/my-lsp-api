@@ -349,6 +349,7 @@ class AssesmentController extends Controller
         $validated = $request->validate([
             'assesment_id' => 'required|exists:assesments,id',
             'skema_id' => 'required|exists:schemas,id',
+            'assesi_id' => 'required|exists:assesi,id',
             'attachments' => 'required|array',
             'attachments.*.file' => 'required|mimes:pdf|max:2048',
             'attachments.*.description' => 'required|string|max:255'
@@ -371,6 +372,7 @@ class AssesmentController extends Controller
             $ak01Submission = FormAk01Submission::Create([
                 'assesment_id' => $validated['assesment_id'],
                 'skema_id' => $validated['skema_id'],
+                'assesi_id' => $validated['assesi_id'],
                 'submission_date' => now()
             ]);
 

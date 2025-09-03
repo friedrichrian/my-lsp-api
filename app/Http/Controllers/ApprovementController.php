@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\FormApl01;
 use App\Models\FormApl01Attachments;
+use App\Models\FormAk01Submission;
+use App\Models\FormAk01Attachments;
 use App\Models\BuktiDokumenAssesi;
 use App\Models\Assesi;
 use App\Models\User;
@@ -53,7 +55,6 @@ class ApprovementController extends Controller
         return response()->json($formApl01);
     }
 
-
     public function approveFormApl01(Request $request, $id)
     {
         $validated = $request->validate([
@@ -101,6 +102,44 @@ class ApprovementController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Error approving Form APL01', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function approveFormAk01ByUser(Request $request, $id){
+        $ak01submission = FormAk01Submission::firstWhere('id', $id);
+        $assesi = Assesi::firstWhere('user_id', $ak01submission->assesi_id);
+
+        if(!$assesi){
+            return response()->json([
+                'status' => 'You dont have this ak01'
+            ], 403);
+        }
+        
+        DB::beginTransaction();
+        try {
+            $ak01submission->update([
+                'status' => 'approved'
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'data' => $ak01submission
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('AK01 Approval Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'submission_id' => $id,
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to process AK01 approval',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
     }
 }

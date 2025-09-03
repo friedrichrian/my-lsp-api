@@ -17,6 +17,7 @@ class FormAk01Submission extends Model
         'skema_id',
         'assesor_id',
         'submission_date',
+        'status'
     ];
 
     /**

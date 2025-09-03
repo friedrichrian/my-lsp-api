@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('assesment_id')->constrained('assesments')->onDelete('cascade');
             $table->foreignId('assesi_id')->nullable()->constrained('assesi')->onDelete('cascade');
             $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
+            $table->enum('status', ['pending', 'approved'])->default('pending');
             $table->dateTime('submission_date');
             $table->timestamps();
         });
