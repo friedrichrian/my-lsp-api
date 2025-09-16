@@ -34,6 +34,7 @@ class AssesorController extends Controller
                 'username' => $validated['username'],
                 'email' => $validated['email'],
                 'password' => bcrypt($validated['password']),
+                'role' => 'assesor'
             ]);
 
             // Create Assesor

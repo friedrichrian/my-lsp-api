@@ -12,21 +12,12 @@ class FormAk01Submission extends Model
     protected $table = 'form_ak01_submissions';
 
     protected $fillable = [
-        'assesment_id',
-        'assesi_id',
+        'assesment_asesi_id',
         'skema_id',
-        'assesor_id',
         'submission_date',
         'status'
     ];
 
-    /**
-     * Relasi ke Assesi
-     */
-    public function assesi()
-    {
-        return $this->belongsTo(Assesi::class, 'assesi_id');
-    }
 
     /**
      * Relasi ke Skema (schemas table)
@@ -36,13 +27,6 @@ class FormAk01Submission extends Model
         return $this->belongsTo(Schema::class, 'skema_id');
     }
 
-    /**
-     * Relasi ke Assesor
-     */
-    public function assesor()
-    {
-        return $this->belongsTo(Assesor::class, 'assesor_id');
-    }
 
     /**
      * Relasi ke attachments (ak01_attachments)

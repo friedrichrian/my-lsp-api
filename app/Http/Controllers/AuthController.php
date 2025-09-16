@@ -30,6 +30,7 @@ class AuthController extends Controller
         ]);
 
         $fields['password'] = Hash::make($fields['password']);
+        $fields['role'] = 'assesi'; // Default role is 'user'
 
         $user = User::create($fields);
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Assesment_Asesi;
+use App\Models\Assesment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -37,6 +38,27 @@ class AssesmentAsesiController extends Controller
             'message' => 'Assessment participants for assesi',
             'data' => $assesmentAsesi
         ]);
+    }
+
+    public function showByAsesor(Request $request, $assesor_id){
+       $assesment = Assesment::where('status', 'active')
+        ->where('assesor_id', $assesor_id) 
+        ->with('assesment_asesi.asesi')   
+        ->get();
+
+        if($assesment->isEmpty()){
+            return response()->json([
+                'status' => 'false',
+                'message' => 'assesment not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'true',
+            'message' => 'Assessment participants for assesi by assesor',
+            'data' => $assesment
+        ], 200);
+
     }
 
     public function store(Request $request)

@@ -23,4 +23,14 @@ class Assesment_Asesi extends Model
     {
         return $this->hasOne(Form_Apl02_Submission::class, 'assesment_asesi_id');
     }
+
+    public function asesi(){
+        return $this->belongsTo(Assesi::class, 'assesi_id', 'id');
+    }
+
+    public function form_ak01_submissions()
+    {
+        return $this->hasOne(FormAk01Submission::class, 'assesment_asesi_id');
+    }
+
 }

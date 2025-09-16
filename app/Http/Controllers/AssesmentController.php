@@ -352,32 +352,19 @@ class AssesmentController extends Controller
     public function formAk01(Request $request)
     {
         $validated = $request->validate([
-            'assesment_id' => 'required|exists:assesments,id',
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
             'skema_id' => 'required|exists:schemas,id',
-            'assesi_id' => 'required|exists:assesi,id',
             'attachments' => 'required|array',
             'attachments.*.file' => 'required|mimes:pdf|max:2048',
             'attachments.*.description' => 'required|string|max:255'
         ]);
 
-        $assesment = Assesment::find($validated['assesment_id']);
-        if (!$assesment) {
-            return response()->json(['message' => 'Assessment not found'], 404);
-        }
-
-        $assesor = $assesment->assesor;
-        $assesorUser = Assesor::firstWhere('id', auth()->user()->id);
-        if (!$assesor->id || $assesor->id !== $assesorUser->id) {
-            return response()->json(['message' => 'You are not the Assesor'], 404);
-        }
-
         DB::beginTransaction();
         try {
             // Create the main AK01 submission
             $ak01Submission = FormAk01Submission::Create([
-                'assesment_id' => $validated['assesment_id'],
+                'assesment_asesi_id' => $validated['assesment_asesi_id'],
                 'skema_id' => $validated['skema_id'],
-                'assesi_id' => $validated['assesi_id'],
                 'submission_date' => now()
             ]);
 
@@ -584,5 +571,24 @@ class AssesmentController extends Controller
                 'error' => 'Terjadi kesalahan tak terduga. Silakan coba lagi nanti.'
             ], 500);
         }
+    }
+
+    public function showApl02ByAssesi($assesi_id){
+        $apl02 = FormApl02Submission::where('assesi_id', $assesi_id)->get();
+
+        return response()->json([
+            'status' => 'true',
+            'message' => 'Apl 02 by assesi',
+            'data' => $apl02
+        ], 200);
+    }
+
+    public function showAk01ByAssesi($assesi_id){
+        $ak01 = Assesment_Asesi::where('assesi_id', $assesi_id)->with('form_ak01_submissions.attachments')->get();
+        return response()->json([
+            'status' => 'true',
+            'message' => 'Ak 01 by assesi',
+            'data' => $ak01
+        ], 200);
     }
 }
