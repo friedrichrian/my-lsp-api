@@ -21,45 +21,125 @@ class AssesmentAsesiController extends Controller
         ]);
     }
 
-    public function show($id){
-        $assesmentAsesi = Assesment_Asesi::findOrFail($id);
-        return response()->json([
-            'success' => true,
-            'message' => 'Assessment participant details',
-            'data' => $assesmentAsesi
-        ]);
+    public function show($id)
+    {
+        try {
+            $assesmentAsesi = Assesment_Asesi::findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment participant details retrieved successfully',
+                'data' => $assesmentAsesi
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assessment participant not found',
+                'error'   => $e->getMessage()
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while retrieving assessment participant',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function showByAsesi($assesi_id)
     {
-        $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)->get();
-        return response()->json([
-            'success' => true,
-            'message' => 'Assessment participants for assesi',
-            'data' => $assesmentAsesi
-        ]);
-    }
+        try {
+            $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)->get();
 
-    public function showByAsesor(Request $request, $assesor_id){
-       $assesment = Assesment::where('status', 'active')
-        ->where('assesor_id', $assesor_id) 
-        ->with('assesment_asesi.asesi')   
-        ->get();
+            if ($assesmentAsesi->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No assessment participants found for this asesi',
+                    'data'    => []
+                ], 404);
+            }
 
-        if($assesment->isEmpty()){
             return response()->json([
-                'status' => 'false',
-                'message' => 'assesment not found'
-            ], 404);
+                'success' => true,
+                'message' => 'Assessment participants retrieved successfully',
+                'data'    => $assesmentAsesi
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while retrieving assessment participants',
+                'error'   => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'true',
-            'message' => 'Assessment participants for assesi by assesor',
-            'data' => $assesment
-        ], 200);
-
     }
+
+
+    public function showAsesiByAsesor($assesor_id)
+    {
+        try {
+            $assesments = Assesment::where('status', 'active')
+                ->where('assesor_id', $assesor_id)
+                ->with('assesment_asesi.asesi')
+                ->get();
+
+            if ($assesments->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active assessments found for this assessor',
+                    'data'    => []
+                ], 404);
+            }
+
+            // Ambil hanya data asesi dari assesment
+            $asesiList = $assesments->flatMap(function ($assesment) {
+                return $assesment->assesment_asesi->map(function ($aa) {
+                    return $aa->asesi;
+                });
+            })->unique('id')->values(); // biar gak duplikat kalau ada
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Active asesi list for this assessor',
+                'data'    => $asesiList
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error while retrieving asesi for assessor',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function showAssesmentAsesiByAssesment($assesment_id)
+    {
+        try {
+            $assesmentAsesi = Assesment_Asesi::where('assesment_id', $assesment_id)
+                ->with('asesi') // load relasi asesi biar dapet detail peserta
+                ->get();
+
+            if ($assesmentAsesi->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No participants found for this assessment',
+                    'data'    => []
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment participants retrieved successfully',
+                'data'    => $assesmentAsesi
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error while retrieving participants for this assessment',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function store(Request $request)
     {
