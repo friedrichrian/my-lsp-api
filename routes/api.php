@@ -67,6 +67,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/assesment', [AssesmentController::class, 'createAssesment']);
     Route::get('/assesment', [AssesmentController::class, 'index']);
+    Route::get('/assesment-asesi', [AssesmentAsesiController::class, 'index']);
+    Route::get('/assesment-asesi/byAssesment/{id}', [AssesmentAsesiController::class, 'showAssesmentAsesiByAssesment']);
 
     Route::post('/admin', [AdminController::class, 'store']);
     Route::get('/admin', [AdminController::class, 'index']);
@@ -98,9 +100,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
-    Route::post('/assesment/asesi', [AssesmentAsesiController::class, 'store']);
-    Route::get('/assesment/asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
-    Route::get('/assesment/asesor/{id}', [AssesmentAsesiController::class, 'showByAsesor']);
+    Route::post('/assesment-asesi', [AssesmentAsesiController::class, 'store']);
+    Route::get('/assesment-asesi/byAsesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
+    Route::get('/assesment-asesi/byAsesor/{id}', [AssesmentAsesiController::class, 'showByAsesor']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
 
     Route::get('/formApl01', [AssesiController::class, 'show']);
