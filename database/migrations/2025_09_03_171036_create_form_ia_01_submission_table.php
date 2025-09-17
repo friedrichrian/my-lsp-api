@@ -29,6 +29,7 @@ return new class extends Migration
             $table->integer('unit_ke');
             $table->string('kode_unit');
             $table->foreignId('elemen_id')->constrained('elements')->onDelete('cascade');
+            $table->foreignId('kuk_id')->constrained('kriteria_untuk_kerja')->onDelete('cascade'); // Tambahkan kolom ini
             $table->enum('skkni', ['ya', 'tidak']);
             $table->timestamps();
         });

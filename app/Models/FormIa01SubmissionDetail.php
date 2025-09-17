@@ -17,6 +17,7 @@ class FormIa01SubmissionDetail extends Model
         'unit_ke',
         'kode_unit',
         'elemen_id',
+        'kuk_id', // Tambahkan kolom ini
         'skkni'
     ];
 
@@ -28,6 +29,11 @@ class FormIa01SubmissionDetail extends Model
     public function element(): BelongsTo
     {
         return $this->belongsTo(Element::class, 'elemen_id');
+    }
+
+    public function kuk(): BelongsTo
+    {
+        return $this->belongsTo(KukSkkni::class, 'kuk_id');
     }
 
     public function penilaianLanjut(): HasMany

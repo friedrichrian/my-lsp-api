@@ -408,7 +408,8 @@ class AssesmentController extends Controller
         }
     }
 
-    public function formIa01(Request $request){
+    public function formIa01(Request $request)
+    {
         $validated = $request->validate([
             'skema_id' => 'required|exists:schemas,id',
             'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
@@ -417,9 +418,11 @@ class AssesmentController extends Controller
             'submissions.*.kode_unit' => 'required|string',
             'submissions.*.elemen' => 'required|array',
             'submissions.*.elemen.*.elemen_id' => 'required|exists:elements,id',
-            'submissions.*.elemen.*.skkni' => 'required|in:ya,tidak',
-            'submissions.*.elemen.*.penilaian_lanjut' => 'required|array',
-            'submissions.*.elemen.*.penilaian_lanjut.*.teks_penilaian' => 'required|string'
+            'submissions.*.elemen.*.kuk' => 'required|array',
+            'submissions.*.elemen.*.kuk.*.kuk_id' => 'required|exists:kriteria_untuk_kerja,id',
+            'submissions.*.elemen.*.kuk.*.skkni' => 'required|in:ya,tidak',
+            'submissions.*.elemen.*.kuk.*.penilaian_lanjut' => 'required|array',
+            'submissions.*.elemen.*.kuk.*.penilaian_lanjut.*.teks_penilaian' => 'required|string'
         ]);
 
         $assesor = auth()->user()->assesor;
@@ -427,12 +430,11 @@ class AssesmentController extends Controller
             return response()->json(['message' => 'Assesor not found'], 404);
         }
 
-        
-
         DB::beginTransaction();
         try {
             $assesment_assesi = Assesment_Asesi::where('id', $validated['assesment_asesi_id'])->first();
             $assesi = Assesi::where('id', $assesment_assesi->assesi_id)->first();
+
             // Create the main submission
             $mainSubmission = FormIa01Submission::create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
@@ -445,21 +447,24 @@ class AssesmentController extends Controller
             // Process each submission
             foreach ($validated['submissions'] as $unit) {
                 foreach ($unit['elemen'] as $elemen) {
-                    // Create submission details
-                    $submissionDetail = FormIa01SubmissionDetail::create([
-                        'submission_id' => $mainSubmission->id,
-                        'unit_ke' => $unit['unit_ke'],
-                        'kode_unit' => $unit['kode_unit'],
-                        'elemen_id' => $elemen['elemen_id'],
-                        'skkni' => $elemen['skkni']
-                    ]);
-
-                    // Create penilaian lanjut
-                    foreach ($elemen['penilaian_lanjut'] as $penilaian) {
-                        FormIa01PenilaianLanjut::create([
-                            'submission_detail_id' => $submissionDetail->id,
-                            'teks_penilaian' => $penilaian['teks_penilaian']
+                    foreach ($elemen['kuk'] as $kuk) {
+                        // Create submission details for KUK
+                        $submissionDetail = FormIa01SubmissionDetail::create([
+                            'submission_id' => $mainSubmission->id,
+                            'unit_ke' => $unit['unit_ke'],
+                            'kode_unit' => $unit['kode_unit'],
+                            'elemen_id' => $elemen['elemen_id'],
+                            'kuk_id' => $kuk['kuk_id'], // Tambahkan kolom kuk_id
+                            'skkni' => $kuk['skkni']
                         ]);
+
+                        // Create penilaian lanjut for each KUK
+                        foreach ($kuk['penilaian_lanjut'] as $penilaian) {
+                            FormIa01PenilaianLanjut::create([
+                                'submission_detail_id' => $submissionDetail->id,
+                                'teks_penilaian' => $penilaian['teks_penilaian']
+                            ]);
+                        }
                     }
                 }
             }
