@@ -19,6 +19,18 @@ class Assesment_Asesi extends Model
         return $this->belongsTo(Assesment::class, 'assesment_id');
     }
 
+    public function assesor()
+    {
+        return $this->hasOneThrough(
+            Assessor::class,   // model tujuan
+            Assesment::class,  // model perantara
+            'id',              // PK di tabel assesment
+            'id',              // PK di tabel assessor
+            'assesment_id',    // FK di assesment_asesi
+            'assesor_id'       // FK di assesment
+        );
+    }
+
     public function form_apl_02()
     {
         return $this->hasOne(Form_Apl02_Submission::class, 'assesment_asesi_id');
