@@ -41,4 +41,9 @@ class FormApl01 extends Model
     {
         return $this->hasMany(FormApl01Attachments::class, 'form_apl01_id');
     }
+
+    public function sertificationData()
+    {
+        return $this->hasOne(FormApl01SertificationData::class, 'form_apl01_id');
+    }
 }

@@ -12,8 +12,6 @@ return new class extends Migration {
             $table->foreignId('jurusan_id')->constrained('jurusan')->onDelete('cascade');
             $table->string('judul_skema');
             $table->string('nomor_skema')->unique();
-            $table->timestamp('tanggal_mulai')->nullable();
-            $table->timestamp('tanggal_selesai')->nullable();
             $table->timestamps();
         });
 

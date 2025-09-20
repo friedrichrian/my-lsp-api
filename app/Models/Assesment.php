@@ -14,7 +14,7 @@ class Assesment extends Model
         'assesor_id',
         'tanggal_assesment',
         'status',
-        'tuk',
+        'tuk', 'tanggal_mulai', 'tanggal_selesai'
     ];  
 
     public function schema()

@@ -533,8 +533,6 @@ class Apl02ImportController extends Controller
                     'total_units' => $schema->units()->count(),
                     'total_elements' => $schema->units()->withCount('elements')->get()->sum('elements_count'),
                     'total_kuk' => $schema->countTotalKuk(),
-                    'tanggal_mulai' => $schema->tanggal_mulai,
-                    'tanggal_selesai' => $schema->tanggal_selesai,
                     'created_at' => $schema->created_at,
                 ];
             })

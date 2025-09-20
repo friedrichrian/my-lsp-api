@@ -29,6 +29,10 @@ Route::get('/user', function (Request $request) {
     Route::get('/jurusan', [JurusanController::class, 'index']);
     Route::get('/user', [UserController::class, 'show'])->middleware('auth:sanctum');
 
+    
+    // Attachments routes
+    Route::get('/form-apl01/attachment/{id}/view', [ApprovementController::class, 'viewAttachment'])
+    ->name('form-apl01.attachment.view');
 
   // ------------ //
  // ADMIN ROUTES //
@@ -58,9 +62,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/assesment/formapl01', [ApprovementController::class, 'indexingFormApl01']);
     Route::post('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'approveFormApl01']);
 
-    // Attachments routes
-    Route::get('/form-apl01/attachment/{id}/view', [ApprovementController::class, 'viewAttachment'])
-    ->name('form-apl01.attachment.view');
 
     Route::post('/apl02/import', [Apl02ImportController::class, 'import']);
     Route::delete('/apl02/{id}', [Apl02ImportController::class, 'destroy']);
@@ -88,10 +89,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formapl01', [AssesmentController::class, 'formApl01']);
     Route::post('/assesment/formapl02', [AssesmentController::class, 'formApl02']);
     Route::post('/assesment/formak01', [AssesmentController::class, 'formAk01']);
+
     Route::post('/assesment/formia01', [AssesmentController::class, 'formIa01']);
+    Route::post('/assesment/formak02', [AssesmentController::class, 'formAk02']);
+    Route::post('/assesment/formak03', [AssesmentController::class, 'formAk03']);
+    Route::post('/assesment/formak05', [AssesmentController::class, 'formAk05']);
 
     //Approve by user
     Route::get('/assesment/formak01/{id}', [AssesmentController::class, 'showAk01ByAssesi']);
+    Route::get('/assesment/formia01/{id}', [AssesmentController::class, 'getIa01ByAssesi']);
+    Route::get('/assesment/formak02/{id}', [AssesmentController::class, 'getAk02ByAssesi']);
+    Route::get('/assesment/formak03/{id}', [AssesmentController::class, 'getAk03ByAssesi']);
+    Route::get('/assesment/formak05/{id}', [AssesmentController::class, 'getAk05ByAssesi']);
+    Route::get('/bukti-dokumen/view/{id}', [ApprovementController::class, 'viewAttachment'])->name('bukti-dokumen.view');
+
     Route::post('/user/assesment/formak01/{id}', [ApprovementController::class, 'approveFormAk01ByUser']);
 
     Route::get('/assesi', [AssesiController::class, 'index']);

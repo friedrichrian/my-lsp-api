@@ -60,7 +60,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'login success',
             'token' => $token->plainTextToken,
-            'user' => $user->only(['id', 'jurusan_id', 'role'])
+            'user' => $user->only(['id', 'username', 'jurusan_id', 'role'])
         ], 200);
     }
 
