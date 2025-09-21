@@ -19,8 +19,12 @@ class Assesment extends Model
 
     public function schema()
     {
-        return $this->belongsTo(Schema::class, 'skema_id'); 
-        // sesuaikan foreign key dan model
+        return $this->belongsTo(Schema::class, 'skema_id');
+    }
+
+    public function skema()
+    {
+        return $this->belongsTo(Schema::class, 'skema_id');
     }
 
     public function admin()
