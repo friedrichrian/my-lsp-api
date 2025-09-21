@@ -27,11 +27,21 @@ class ApprovementController extends Controller
             ->header('Content-Disposition', 'inline; filename="'.$attachment->nama_dokumen.'"');
     }
 
-    public function indexingFormApl01(){
-        $formApl01s = FormApl01::with('user', 'attachments')->get();
-        try{
+    public function indexingFormApl01()
+    {
+        $formApl01s = FormApl01::with('user', 'attachments', 'sertificationData.schema.units')->get();
+
+        // Tambahkan view_url untuk setiap attachment
+        $formApl01s->each(function ($formApl01) {
+            $formApl01->attachments->transform(function ($attachment) {
+                $attachment->view_url = route('form-apl01.attachment.view', $attachment->id);
+                return $attachment;
+            });
+        });
+
+        try {
             return response()->json(['message' => 'Form APL01 index', 'data' => $formApl01s], 200);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return response()->json(['message' => 'Error fetching Form APL01', 'error' => $e->getMessage()], 500);
         }
     }

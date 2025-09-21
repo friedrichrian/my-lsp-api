@@ -51,7 +51,7 @@ class User extends Authenticatable
 
     public function assesi()
     {
-        return $this->hasOne(Assesi::class);
+        return $this->hasOne(Assesi::class, 'user_id');
     }
 
     public function assesor()

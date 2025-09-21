@@ -18,7 +18,8 @@ class FormIa01SubmissionDetail extends Model
         'kode_unit',
         'elemen_id',
         'kuk_id', // Tambahkan kolom ini
-        'skkni'
+        'skkni',
+        'teks_penilaian',
     ];
 
     public function submission(): BelongsTo
@@ -33,11 +34,7 @@ class FormIa01SubmissionDetail extends Model
 
     public function kuk(): BelongsTo
     {
-        return $this->belongsTo(KukSkkni::class, 'kuk_id');
+        return $this->belongsTo(KriteriaUntukKerja::class, 'kuk_id');
     }
 
-    public function penilaianLanjut(): HasMany
-    {
-        return $this->hasMany(FormIa01PenilaianLanjut::class, 'submission_detail_id');
-    }
 }

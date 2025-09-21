@@ -24,6 +24,8 @@ return new class extends Migration
             $table->date('tanggal_assesment');
             $table->enum('status', ['expired', 'active']);
             $table->string('tuk');
+            $table->timestamp('tanggal_mulai')->nullable();
+            $table->timestamp('tanggal_selesai')->nullable();
             $table->timestamps();
         });
     }

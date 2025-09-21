@@ -17,7 +17,7 @@ class AssesmentAsesiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List of assessment participants',
-            'data' => Assesment_Asesi::all()
+            'data' => Assesment_Asesi::with('asesi')->get()
         ]);
     }
 

@@ -31,12 +31,6 @@ return new class extends Migration
             $table->foreignId('elemen_id')->constrained('elements')->onDelete('cascade');
             $table->foreignId('kuk_id')->constrained('kriteria_untuk_kerja')->onDelete('cascade'); // Tambahkan kolom ini
             $table->enum('skkni', ['ya', 'tidak']);
-            $table->timestamps();
-        });
-
-        Schema::create('ia_01_penilaian_lanjut', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('submission_detail_id')->constrained('ia_01_submission_details')->onDelete('cascade');
             $table->text('teks_penilaian');
             $table->timestamps();
         });
@@ -49,6 +43,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('form_ia_01_submission');
         Schema::dropIfExists('ia_01_submission_details');
-        Schema::dropIfExists('ia_01_penilaian_lanjut');
     }
 };

@@ -30,8 +30,6 @@ class FrIa01Seeder extends Seeder
             'judul_skema' => 'Pemrograman Junior',
             'nomor_skema' => 'SSP.BNSP.001.2023',
             'jurusan_id' => $jurusan->id,
-            'tanggal_mulai' => now(),
-            'tanggal_selesai' => now()->addYear()
         ]);
 
         // Unit Kompetensi berdasarkan dokumen MUK

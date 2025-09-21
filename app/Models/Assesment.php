@@ -14,13 +14,17 @@ class Assesment extends Model
         'assesor_id',
         'tanggal_assesment',
         'status',
-        'tuk',
+        'tuk', 'tanggal_mulai', 'tanggal_selesai'
     ];  
 
     public function schema()
     {
-        return $this->belongsTo(Schema::class, 'skema_id'); 
-        // sesuaikan foreign key dan model
+        return $this->belongsTo(Schema::class, 'skema_id');
+    }
+
+    public function skema()
+    {
+        return $this->belongsTo(Schema::class, 'skema_id');
     }
 
     public function admin()
