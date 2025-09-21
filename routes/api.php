@@ -14,10 +14,6 @@ use App\Http\Controllers\AssesmentAsesiController;
 use App\Http\Controllers\JurusanController;
 use \App\Http\Controllers\QuestionController;
 
-Route::get('/user', function (Request $request) {
-    return auth()->user();
-})->middleware('auth:sanctum');
-
     // Hanya 10 request per menit per user/IP
     Route::prefix('auth')->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
@@ -27,7 +23,7 @@ Route::get('/user', function (Request $request) {
    
 
     Route::get('/jurusan', [JurusanController::class, 'index']);
-    Route::get('/user', [UserController::class, 'show'])->middleware('auth:sanctum');
+    Route::get('/asesi', [UserController::class, 'show'])->middleware('auth:sanctum');
 
     
     // Attachments routes
