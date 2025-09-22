@@ -105,12 +105,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
-    Route::post('/assesment-asesi', [AssesmentAsesiController::class, 'store']);
-    Route::get('/assesment-asesi/byAsesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
-    Route::get('/assesment-asesi/assesor/{id}', [AssesmentAsesiController::class, 'showAssesmentAsesiByAssesment']);
+    Route::get('/user/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByUser']);
+    Route::post('/asesi/assesment-asesi', [AssesmentAsesiController::class, 'store']);
+    Route::get('/asesi/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
+    Route::get('/assesor/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showAssesmentAsesiByAssesment']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
     //Approvement Details routes
-    Route::get('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
+    Route::get('show/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
 
     Route::get('/formApl01', [AssesiController::class, 'show']);
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);

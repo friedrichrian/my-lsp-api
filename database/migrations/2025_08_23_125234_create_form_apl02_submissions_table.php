@@ -13,9 +13,6 @@ return new class extends Migration
     {
         Schema::create('form_apl02_submissions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('assesi_id')->constrained('assesi')->onDelete('cascade');
-            $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
-            $table->foreignId('assesor_id')->nullable()->constrained('assesor')->onDelete('cascade');
             $table->dateTime('submission_date');
             $table->timestamps();
         });

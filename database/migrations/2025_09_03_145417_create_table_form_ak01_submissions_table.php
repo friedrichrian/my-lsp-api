@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('form_ak01_submissions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('assesment_asesi_id')->constrained('assesment_asesi')->onDelete('cascade');
-            $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
             $table->enum('status', ['pending', 'approved'])->default('pending');
             $table->dateTime('submission_date');
             $table->timestamps();

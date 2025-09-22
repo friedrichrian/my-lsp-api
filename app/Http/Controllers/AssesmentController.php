@@ -384,9 +384,7 @@ class AssesmentController extends Controller
     {
         $validated = $request->validate([
             'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
-            'skema_id' => 'required|exists:schemas,id',
             'attachments' => 'required|array',
-            'attachments.*.file' => 'required|mimes:pdf|max:2048',
             'attachments.*.description' => 'required|string|max:255'
         ]);
 
@@ -401,20 +399,8 @@ class AssesmentController extends Controller
 
             // Process each attachment
             foreach ($validated['attachments'] as $attachment) {
-                // Generate a unique filename
-                $file = $attachment['file'];
-                $filename = uniqid().'_'.$file->getClientOriginalName();
-                $path = 'formak01/'.$ak01Submission->id.'/'.$filename;
-
-                // Get file contents and encrypt
-                $encryptedContents = encrypt(file_get_contents($file->getRealPath()));
-
-                // Store using Storage facade for better consistency
-                Storage::disk('private')->put($path, $encryptedContents);
-
                 // Create attachment record
                 $ak01Submission->attachments()->create([
-                    'file_path' => $path,
                     'description' => $attachment['description'] ?? null
                 ]);
             }
@@ -998,18 +984,62 @@ class AssesmentController extends Controller
         }
     }
 
-    public function showApl02ByAssesi($assesi_id){
-        $apl02 = FormApl02Submission::where('assesi_id', $assesi_id)->get();
+    public function showApl02ByAssesi($assesi_id)
+    {
+        $apl02 = FormApl02Submission::with([
+            'jurusan',
+            'skema',
+            'unit. elemen.kuk'
+        ])->where('assesi_id', $assesi_id)->get();
 
-        return response()->json([
-            'status' => 'true',
-            'message' => 'Apl 02 by assesi',
-            'data' => $apl02
-        ], 200);
+        if ($apl02->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data APL-02 tidak ditemukan',
+                'data' => []
+            ], 404);
+        }
+
+        $first = $apl02->first(); // ambil 1 skema untuk identitas
+
+        $response = [
+            'success' => true,
+            'jurusan' => [
+                'id' => $first->jurusan->id,
+                'nama' => $first->jurusan->nama,
+            ],
+            'judul_skema' => $first->skema->judul,
+            'nomor_skema' => $first->skema->nomor,
+            'data' => $first->unit->map(function ($unit, $i) {
+                return [
+                    'unit_ke' => $i + 1,
+                    'kode_unit' => $unit->kode_unit,
+                    'judul_unit' => $unit->judul_unit,
+                    'elemen' => $unit->elemen->mapWithKeys(function ($elemen, $j) {
+                        return [
+                            $j + 1 => [
+                                'elemen_index' => $j + 1,
+                                'nama_elemen' => $elemen->nama_elemen,
+                                'kuk' => $elemen->kuk->map(function ($kuk) {
+                                    return [
+                                        'id_kuk' => $kuk->id,
+                                        'urutan' => $kuk->urutan,
+                                        'deskripsi_kuk' => $kuk->deskripsi
+                                    ];
+                                })
+                            ]
+                        ];
+                    })
+                ];
+            })
+        ];
+
+        return response()->json($response, 200);
     }
 
+
     public function showAk01ByAssesi($assesi_id){
-        $ak01 = Assesment_Asesi::where('assesi_id', $assesi_id)->with('form_ak01_submissions.attachments')->get();
+        $ak01 = Assesment_Asesi::where('assesment_asesi_id', $assesi_id)->with('form_ak01_submissions.attachments')->get();
         return response()->json([
             'status' => 'true',
             'message' => 'Ak 01 by assesi',

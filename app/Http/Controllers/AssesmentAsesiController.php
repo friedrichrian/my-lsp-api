@@ -46,10 +46,39 @@ class AssesmentAsesiController extends Controller
         }
     }
 
+    public function showByUser($user_id){
+        try{
+            $assesmentAsesi = Assesment_Asesi::whereHas('asesi', function ($query) use ($user_id) {
+                $query->where('user_id', $user_id);
+            })->get();
+            if ($assesmentAsesi->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No assessment participants found for this asesi',
+                    'data'    => []
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment participants retrieved successfully',
+                'data'    => $assesmentAsesi
+            ], 200);
+        }catch(\Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while retrieving assessment participants',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function showByAsesi($assesi_id)
     {
         try {
-            $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)->get();
+            $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)
+            ->with('asesi')
+            ->get();
 
             if ($assesmentAsesi->isEmpty()) {
                 return response()->json([
