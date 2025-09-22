@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('assesment_asesi_id')
                 ->constrained('assesment_asesi')
                 ->onDelete('cascade');
+            $table->enum('ttd_assesor', ['approved', 'rejected', 'pending'])->default('pending')->after('assesment_asesi_id');
         });
     }
 

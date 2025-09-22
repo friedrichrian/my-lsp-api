@@ -91,7 +91,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formak03', [AssesmentController::class, 'formAk03']);
     Route::post('/assesment/formak05', [AssesmentController::class, 'formAk05']);
 
-    //Approve by user
+    //Approve by Assesor
+    Route::post('/approvement/assesment/formapl02/{id}', [ApprovementController::class, 'approveFormApl02ByAssesor']);
+
+    //Approve by Assesi
     Route::get('/assesment/formak01/{id}', [AssesmentController::class, 'showAk01ByAssesi']);
     Route::get('/assesment/formia01/{id}', [AssesmentController::class, 'getIa01ByAssesi']);
     Route::get('/assesment/formak02/{id}', [AssesmentController::class, 'getAk02ByAssesi']);

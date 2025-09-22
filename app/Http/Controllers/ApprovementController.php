@@ -7,6 +7,7 @@ use App\Models\FormApl01;
 use App\Models\FormApl01Attachments;
 use App\Models\FormAk01Submission;
 use App\Models\FormAk01Attachments;
+use App\Models\FormApl02Submission;
 use App\Models\BuktiDokumenAssesi;
 use App\Models\Assesi;
 use App\Models\User;
@@ -112,6 +113,34 @@ class ApprovementController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Error approving Form APL01', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function approveFormApl02ByAssesor(Request $request, $id){
+        $validated = $request->validate([
+            'ttd_assesor' => 'required|in:approved,rejected',
+        ]);
+
+        $apl02submission = FormApl02Submission::firstWhere('id', $id);
+
+        DB::beginTransaction();
+        try {
+            $apl02submission->update([
+                'ttd_assesor' => $validated['ttd_assesor']
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'data' => $apl02submission
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to process APL02 approval',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
     }
 
