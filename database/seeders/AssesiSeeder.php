@@ -13,8 +13,8 @@ class AssesiSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get asesi users
-        $asesiUsers = User::where('role', 'asesi')->get();
+        // Get asesi users (role value is 'assesi' as defined in UserSeeder)
+        $asesiUsers = User::where('role', 'assesi')->get();
 
         $asesiData = [
             [
