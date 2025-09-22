@@ -8,9 +8,9 @@ class FormApl02Submission extends Model
 {
     
     protected $fillable = [
-        'skema_id',
+        'ttd_asesi',
+        'ttd_assesor',
         'submission_date',
-        'assesi_id',
         'assesment_asesi_id'
     ];
 

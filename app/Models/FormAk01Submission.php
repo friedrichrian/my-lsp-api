@@ -13,7 +13,6 @@ class FormAk01Submission extends Model
 
     protected $fillable = [
         'assesment_asesi_id',
-        'skema_id',
         'submission_date',
         'status'
     ];

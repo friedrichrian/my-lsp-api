@@ -535,7 +535,6 @@ class AssesmentController extends Controller
 
     public function formIa01(Request $request){
         $validated = $request->validate([
-            'skema_id' => 'required|exists:schemas,id',
             'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
             'submissions' => 'required|array',
             'submissions.*.unit_ke' => 'required|integer',
@@ -722,43 +721,59 @@ class AssesmentController extends Controller
     }
 
 
-    public function getIa01ByAssesi($assesi_id)
+    public function getIa01ByAssesi($assesmentAsesiId)
     {
         try {
-            // Ambil data FormIa01Submission berdasarkan assesi_id
-            $ia01Submissions = FormIa01Submission::where('assesi_id', $assesi_id)
+            // Pastikan Assesment_Asesi ada
+            $assesmentAsesi = Assesment_Asesi::with(['assesment.skema', 'assesment.assesor'])
+                ->find($assesmentAsesiId);
+
+            if (!$assesmentAsesi) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Assesment_Asesi not found.'
+                ], 404);
+            }
+
+            // Ambil data Form IA01 Submission berdasarkan assesment_asesi_id
+            $ia01Submissions = FormIa01Submission::where('assesment_asesi_id', $assesmentAsesiId)
                 ->with([
                     'details' => function ($query) {
-                        $query->with(['element', 'kuk']);
-                    },
-                    'assesor',
-                    'skema'
+                        $query->with([
+                            'element' => function ($q) {
+                                $q->with('kuk'); // KUK ada di dalam element
+                            }
+                        ]);
+                    }
                 ])
                 ->get();
 
-            // Jika tidak ada data
             if ($ia01Submissions->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'IA01 submissions not found for the given assesi ID.'
+                    'message' => 'IA01 submissions not found for this assesment asesi.'
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'IA01 submissions retrieved successfully.',
-                'data' => $ia01Submissions
+                'data' => [
+                    'assesment_asesi' => $assesmentAsesi,
+                    'submissions' => $ia01Submissions
+                ]
             ], 200);
+
         } catch (\Exception $e) {
             Log::error('Get IA01 Submission Error: ' . $e->getMessage(), [
-                'assesi_id' => $assesi_id,
+                'assesment_asesi_id' => $assesmentAsesiId,
                 'user_id' => auth()->id()
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve IA01 submissions.',
-                'error' => 'An unexpected error occurred. Please try again later.'
+                'error' => 'An unexpected error occurred. Please try again later. error: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1004,6 +1019,8 @@ class AssesmentController extends Controller
 
         $response = [
             'success' => true,
+            'ttd_asesi' => $first->ttd_asesi,
+            'ttd_assesor' => $first->ttd_assesor,
             'jurusan' => [
                 'id' => $first->jurusan->id,
                 'nama' => $first->jurusan->nama,
@@ -1038,12 +1055,25 @@ class AssesmentController extends Controller
     }
 
 
-    public function showAk01ByAssesi($assesi_id){
-        $ak01 = Assesment_Asesi::where('assesment_asesi_id', $assesi_id)->with('form_ak01_submissions.attachments')->get();
-        return response()->json([
-            'status' => 'true',
-            'message' => 'Ak 01 by assesi',
-            'data' => $ak01
-        ], 200);
+    public function showAk01ByAssesi($assesi_id)
+    {
+        try {
+            $ak01 = FormAk01Submission::where('assesment_asesi_id', $assesi_id)
+                ->with('attachments') // cukup 'attachments', jangan 'form_ak01_submissions.attachments'
+                ->get();
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Ak 01 by assesi',
+                'data'    => $ak01
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil data Ak01',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
+
 }

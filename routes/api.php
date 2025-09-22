@@ -112,7 +112,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesor/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showAssesmentAsesiByAssesment']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
     //Approvement Details routes
-    Route::get('show/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
+    Route::get('/show/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
+    Route::get('/user/show/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01ByUser']);
+
 
     Route::get('/formApl01', [AssesiController::class, 'show']);
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);

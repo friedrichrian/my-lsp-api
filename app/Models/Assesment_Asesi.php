@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Assesment_Asesi extends Model
 {
-    //
     protected $table = 'assesment_asesi';
     protected $fillable = [
         'assesment_id',
@@ -14,35 +16,43 @@ class Assesment_Asesi extends Model
         'status'
     ];
 
-    public function assesment()
+    /**
+     * Relasi ke Assesment
+     */
+    public function assesment(): BelongsTo
     {
         return $this->belongsTo(Assesment::class, 'assesment_id');
     }
 
-    public function assesor()
+    /**
+     * Relasi ke Asesi (peserta)
+     */
+    public function assesi(): BelongsTo
     {
-        return $this->hasOneThrough(
-            Assessor::class,   // model tujuan
-            Assesment::class,  // model perantara
-            'id',              // PK di tabel assesment
-            'id',              // PK di tabel assessor
-            'assesment_id',    // FK di assesment_asesi
-            'assesor_id'       // FK di assesment
-        );
-    }
-
-    public function form_apl_02()
-    {
-        return $this->hasOne(Form_Apl02_Submission::class, 'assesment_asesi_id');
-    }
-
-    public function asesi(){
         return $this->belongsTo(Assesi::class, 'assesi_id', 'id');
     }
 
-    public function form_ak01_submissions()
+    /**
+     * Relasi ke Form APL02
+     */
+    public function formApl02(): HasOne
+    {
+        return $this->hasOne(FormApl02Submission::class, 'assesment_asesi_id');
+    }
+
+    /**
+     * Relasi ke Form AK01
+     */
+    public function formAk01(): HasOne
     {
         return $this->hasOne(FormAk01Submission::class, 'assesment_asesi_id');
     }
 
+    /**
+     * Relasi ke Form IA01 (bisa banyak submission)
+     */
+    public function ia01Submissions(): HasMany
+    {
+        return $this->hasMany(FormIa01Submission::class, 'assesment_asesi_id');
+    }
 }
