@@ -999,7 +999,7 @@ class AssesmentController extends Controller
     }
 
     public function showApl02ByAssesi($assesi_id){
-        $apl02 = FormApl02Submission::where('assesi_id', $assesi_id)->get();
+        $apl02 = FormApl02Submission::where('assesi_id', $assesi_id)->with('details.attachments.bukti')->get();
 
         return response()->json([
             'status' => 'true',
