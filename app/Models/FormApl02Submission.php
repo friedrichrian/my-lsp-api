@@ -11,7 +11,9 @@ class FormApl02Submission extends Model
         'ttd_asesi',
         'ttd_assesor',
         'submission_date',
-        'assesment_asesi_id'
+        'assesi_id',
+        'assesment_asesi_id',
+        'ttd_assesor'
     ];
 
     public function element(){
