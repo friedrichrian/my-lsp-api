@@ -100,7 +100,7 @@ class AssesiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Form APL01 retrieved successfully',
-            'data' => $formApl01->status
+            'data' => $formApl01
         ], 200);
     }
 

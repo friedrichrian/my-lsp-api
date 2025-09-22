@@ -14,4 +14,13 @@ class UserController extends Controller
         }
         return response()->json(['user' =>$user], 200);
     }
+
+    public function showAssesor(Request $request)
+    {
+        $user = Auth()->user()->assesor;
+        if (!$user) {
+            return response()->json(['error' => 'no assesor found'], 404);
+        }
+        return response()->json(['user' =>$user], 200);
+    }
 }
