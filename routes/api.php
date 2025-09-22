@@ -24,6 +24,7 @@ use \App\Http\Controllers\QuestionController;
 
     Route::get('/jurusan', [JurusanController::class, 'index']);
     Route::get('/asesi', [UserController::class, 'show'])->middleware('auth:sanctum');
+    Route::get('/asesor', [UserController::class, 'showAssesor'])->middleware('auth:sanctum');
 
     
     // Attachments routes
