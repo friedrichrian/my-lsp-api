@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Assesor;
 
 class UserController extends Controller
 {
@@ -21,6 +23,8 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['error' => 'no assesor found'], 404);
         }
-        return response()->json(['user' =>$user], 200);
+        return response()->json([
+            'user' => User::with('assesor')->find($user->user_id)
+        ], 200);
     }
 }

@@ -63,7 +63,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
     Route::post('/assesment', [AssesmentController::class, 'createAssesment']);
     Route::get('/assesment', [AssesmentController::class, 'index']);
-    Route::get('/assesment-asesi', [AssesmentAsesiController::class, 'index']);
     Route::get('/assesment-asesi/byAssesment/{id}', [AssesmentAsesiController::class, 'showAssesmentAsesiByAssesment']);
 
     Route::post('/admin', [AdminController::class, 'store']);

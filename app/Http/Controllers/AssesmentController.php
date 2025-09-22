@@ -997,13 +997,8 @@ class AssesmentController extends Controller
         }
     }
 
-    public function showApl02ByAssesi($assesi_id)
-    {
-        $apl02 = FormApl02Submission::with([
-            'jurusan',
-            'skema',
-            'unit. elemen.kuk'
-        ])->where('assesi_id', $assesi_id)->get();
+    public function showApl02ByAssesi($assesi_id){
+        $apl02 = FormApl02Submission::where('assesi_id', $assesi_id)->with('details.attachments.bukti')->get();
 
         if ($apl02->isEmpty()) {
             return response()->json([
