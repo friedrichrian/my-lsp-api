@@ -495,20 +495,27 @@ class Apl02ImportController extends Controller
                     'unit_ke' => $unit->unit_ke,
                     'kode_unit' => $unit->kode_unit,
                     'judul_unit' => $unit->judul_unit,
-                    'elemen' => $unit->elements->mapWithKeys(function($element) {
-                        return [
-                            $element->elemen_index => [
-                                'elemen_index' => $element->elemen_index,
-                                'nama_elemen' => $element->nama_elemen,
-                                'kuk' => $element->kriteriaUntukKerja->map(function($kuk) {
-                                    return [
-                                        'urutan' => $kuk->urutan,
-                                        'deskripsi_kuk' => $kuk->deskripsi_kuk
-                                    ];
-                                })->sortBy('urutan')->values()->toArray()
-                            ]
-                        ];
-                    })
+                    'elemen' => $unit->elements
+                        ->sortBy('elemen_index')
+                        ->mapWithKeys(function($element) {
+                            return [
+                                $element->elemen_index => [
+                                    'id' => $element->id,
+                                    'elemen_index' => $element->elemen_index,
+                                    'nama_elemen' => $element->nama_elemen,
+                                    'kuk' => $element->kriteriaUntukKerja
+                                        ->sortBy('urutan')
+                                        ->map(function($kuk) {
+                                            return [
+                                                'urutan' => $kuk->urutan,
+                                                'deskripsi_kuk' => $kuk->deskripsi_kuk
+                                            ];
+                                        })
+                                        ->values()
+                                        ->toArray()
+                                ]
+                            ];
+                        })
                 ];
             })->sortBy('unit_ke')->values()->toArray()
         ]);

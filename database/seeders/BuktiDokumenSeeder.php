@@ -28,21 +28,20 @@ class BuktiDokumenSeeder extends Seeder
         ];
 
         foreach ($asesiList as $asesi) {
-            // Create 3-5 bukti dokumen per asesi
-            $randomCount = rand(3, 5);
-            $selectedBukti = array_rand($buktiTypes, $randomCount);
-            
-            if (!is_array($selectedBukti)) {
-                $selectedBukti = [$selectedBukti];
-            }
+            foreach ($buktiTypes as $type) {
+                $desc = $type . ' sebagai bukti kompetensi untuk ' . $asesi->nama_lengkap;
+                $file = 'bukti_dokumen/' . $asesi->id . '/' . strtolower(str_replace(' ', '_', $type)) . '.pdf';
 
-            foreach ($selectedBukti as $index) {
-                BuktiDokumenAssesi::create([
-                    'assesi_id' => $asesi->id,
-                    'nama_dokumen' => $buktiTypes[$index] . ' - ' . $asesi->nama_lengkap,
-                    'file_path' => 'bukti_dokumen/' . $asesi->id . '/' . strtolower(str_replace(' ', '_', $buktiTypes[$index])) . '.pdf',
-                    'description' => $buktiTypes[$index] . ' sebagai bukti kompetensi untuk ' . $asesi->nama_lengkap
-                ]);
+                BuktiDokumenAssesi::firstOrCreate(
+                    [
+                        'assesi_id' => $asesi->id,
+                        'description' => $desc,
+                    ],
+                    [
+                        'nama_dokumen' => $type . ' - ' . $asesi->nama_lengkap,
+                        'file_path' => $file,
+                    ]
+                );
             }
         }
     }

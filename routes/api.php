@@ -101,6 +101,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/user/assesment/formak01/{id}', [ApprovementController::class, 'approveFormAk01ByUser']);
 
+    // List bukti dokumen milik asesi saat ini (untuk dropdown di APL-02)
+    Route::get('/bukti-dokumen/self', [ApprovementController::class, 'listBuktiDokumenSelf']);
+
     Route::get('/assesi', [AssesiController::class, 'index']);
     Route::get('/assesor', [AssesorController::class, 'index']);
     Route::get('/assesment', [AssesmentController::class, 'index']);
