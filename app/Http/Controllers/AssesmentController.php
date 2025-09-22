@@ -293,8 +293,7 @@ class AssesmentController extends Controller
     public function formApl02(Request $request)
     {
         $validated = $request->validate([
-            'skema_id' => 'required|exists:schemas,id',
-            'assesment_assesi_id' => 'required|exists:assesment_asesi,id',
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
             'submissions' => 'required|array',
             'submissions.*.unit_ke' => 'required|integer',
             'submissions.*.kode_unit' => 'required|string',
@@ -319,8 +318,7 @@ class AssesmentController extends Controller
         try {
             // Create the main submission
             $mainSubmission = $assesi->apl02Submissions()->create([
-                'skema_id' => $validated['skema_id'],
-                'assesment_asesi_id' => $validated['assesment_assesi_id'],
+                'assesment_asesi_id' => $validated['assesment_asesi_id'],
                 'submission_date' => now()
             ]);
 

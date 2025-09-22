@@ -11,7 +11,7 @@ class FormIa01Submission extends Model
 {
     use HasFactory;
 
-    protected $table = 'form_ia01_submissions'; // 👈 konsistensi nama tabel (hapus underscore setelah ia)
+    protected $table = 'form_ia_01_submissions'; // 👈 konsistensi nama tabel (hapus underscore setelah ia)
     protected $fillable = [
         'assesment_asesi_id',
         'submission_date'

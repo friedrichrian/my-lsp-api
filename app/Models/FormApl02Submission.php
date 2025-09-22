@@ -14,11 +14,6 @@ class FormApl02Submission extends Model
         'assesment_asesi_id'
     ];
 
-    public function assesi()
-    {
-        return $this->belongsTo(Assesi::class, 'assesi_id');
-    }
-
     public function element(){
         return $this->belongsTo(Element::class, 'elements_id');
     }
