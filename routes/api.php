@@ -91,9 +91,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/assesment/formak01', [AssesmentController::class, 'formAk01']);
 
     Route::post('/assesment/formia01', [AssesmentController::class, 'formIa01']);
+    Route::post('/assesment/formia02', [AssesmentController::class, 'formIa02']);
+    Route::post('/assesment/formia03', [AssesmentController::class, 'formIa03']);
     Route::post('/assesment/formak02', [AssesmentController::class, 'formAk02']);
     Route::post('/assesment/formak03', [AssesmentController::class, 'formAk03']);
     Route::post('/assesment/formak05', [AssesmentController::class, 'formAk05']);
+    Route::post('/assesment/formak04', [AssesmentController::class, 'formAk04']);
+    Route::post('/assesment/formia06a', [AssesmentController::class, 'formIa06a']);
 
     //Approve by Assesor
     Route::post('/approvement/assesment/formapl02/{id}', [ApprovementController::class, 'approveFormApl02ByAssesor']);
@@ -101,9 +105,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //Approve by Assesi
     Route::get('/assesment/formak01/{id}', [AssesmentController::class, 'showAk01ByAssesi']);
     Route::get('/assesment/formia01/{id}', [AssesmentController::class, 'getIa01ByAssesi']);
+    Route::get('/assesment/formia02/{id}', [AssesmentController::class, 'getIa02ByAssesi']);
+    Route::get('/assesment/formia03/{id}', [AssesmentController::class, 'getIa03ByAssesi']);
     Route::get('/assesment/formak02/{id}', [AssesmentController::class, 'getAk02ByAssesi']);
     Route::get('/assesment/formak03/{id}', [AssesmentController::class, 'getAk03ByAssesi']);
     Route::get('/assesment/formak05/{id}', [AssesmentController::class, 'getAk05ByAssesi']);
+    Route::get('/assesment/formak04/{id}', [AssesmentController::class, 'getAk04ByAssesi']);
+    Route::get('/assesment/formia06a/{id}', [AssesmentController::class, 'getIa06aByAssesi']);
     Route::get('/bukti-dokumen/view/{id}', [ApprovementController::class, 'viewAttachment'])->name('bukti-dokumen.view');
 
     Route::post('/user/assesment/formak01/{id}', [ApprovementController::class, 'approveFormAk01ByUser']);
@@ -128,10 +136,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/apl02/assesi/{id}', [AssesmentController::class, 'showApl02ByAssesi']);
 
+    // IA Docs list for a skema (must be before dynamic route)
+    Route::get('/ia/docs/list/{skema_id}', [IaDocController::class, 'listBySkema']);
     // IA Docs download (serve .docx per form and skema)
     Route::get('/ia/docs/{form}/{skema_id}', [IaDocController::class, 'download']);
-    // IA Docs list for a skema
-    Route::get('/ia/docs/list/{skema_id}', [IaDocController::class, 'listBySkema']);
 
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');

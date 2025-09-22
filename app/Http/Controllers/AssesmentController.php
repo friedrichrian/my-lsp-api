@@ -22,6 +22,11 @@ use App\Models\Ak03Submission;
 use App\Models\Ak03SubmissionDetail;
 use App\Models\Komponen;
 use App\Models\Ak05Submission;
+use App\Models\Ak04Submission;
+use App\Models\Ia02Submission;
+use App\Models\Ia06ASubmission;
+use App\Models\Ia03Submission;
+use App\Models\Ia03SubmissionDetail;
 use Illuminate\Validation\Rule;
 use App\Models\Schema;
 use App\Models\Jurusan;
@@ -45,6 +50,289 @@ class AssesmentController extends Controller
             'message' => 'List of assessments',
             'data' => $assessments
         ]);
+    }
+
+    // IA-03 store answers (ya/tidak + response text) per question
+    public function formIa03(Request $request)
+    {
+        $validated = $request->validate([
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
+            'skema_id' => 'nullable|exists:schemas,id',
+            'questions' => 'required|array',
+            'questions.*.question_id' => 'required|exists:questions,id',
+            'questions.*.selected_option' => 'required|in:ya,tidak',
+            'questions.*.response_text' => 'required|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $submission = Ia03Submission::create([
+                'assesment_asesi_id' => $validated['assesment_asesi_id'],
+                'skema_id' => $validated['skema_id'] ?? null,
+                'submission_date' => now(),
+            ]);
+
+            foreach ($validated['questions'] as $q) {
+                Ia03SubmissionDetail::create([
+                    'submission_id' => $submission->id,
+                    'question_id' => $q['question_id'],
+                    'selected_option' => $q['selected_option'],
+                    'response_text' => $q['response_text'],
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'IA-03 submission berhasil disimpan',
+                'submission_id' => $submission->id,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('IA-03 Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal submit IA-03',
+                'error' => config('app.debug') ? $e->getMessage() : 'Unexpected error',
+            ], 500);
+        }
+    }
+
+    public function getIa03ByAssesi($assesi_id)
+    {
+        try {
+            $subs = Ia03Submission::with(['details'])
+                ->whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
+                    $q->where('assesi_id', $assesi_id);
+                })
+                ->orderByDesc('id')
+                ->get();
+
+            if ($subs->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'IA-03 submissions not found for the given assesi ID.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'IA-03 submissions retrieved successfully.',
+                'data' => $subs,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get IA-03 Submission Error: ' . $e->getMessage(), [
+                'assesi_id' => $assesi_id,
+                'user_id' => auth()->id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve IA-03 submissions.',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
+    // IA-06.A simple submission store
+    public function formIa06a(Request $request)
+    {
+        $validated = $request->validate([
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
+            'skema_id' => 'nullable|exists:schemas,id',
+            'catatan' => 'nullable|string',
+            'ttd_asesi' => 'nullable|in:belum,sudah',
+            'ttd_asesor' => 'nullable|in:belum,sudah',
+            'extra' => 'nullable|array',
+        ]);
+
+        try {
+            $submission = Ia06ASubmission::create($validated);
+            return response()->json([
+                'success' => true,
+                'message' => 'IA-06.A submission berhasil disimpan',
+                'submission_id' => $submission->id,
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('IA-06.A Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal submit IA-06.A',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getIa06aByAssesi($assesi_id)
+    {
+        try {
+            $submissions = Ia06ASubmission::whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
+                $q->where('assesi_id', $assesi_id);
+            })->get();
+
+            if ($submissions->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'IA-06.A submissions not found for the given assesi ID.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'IA-06.A submissions retrieved successfully.',
+                'data' => $submissions,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get IA-06.A Submission Error: ' . $e->getMessage(), [
+                'assesi_id' => $assesi_id,
+                'user_id' => auth()->id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve IA-06.A submissions.',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
+    // IA-02 (FR.IA.02 TPD) simple submission store
+    public function formIa02(Request $request)
+    {
+        $validated = $request->validate([
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
+            'skema_id' => 'nullable|exists:schemas,id',
+            'skema_sertifikasi' => 'nullable|string',
+            'judul_unit' => 'nullable|string',
+            'kode_unit' => 'nullable|string',
+            'tuk' => 'nullable|string',
+            'nama_asesor' => 'nullable|string',
+            'nama_asesi' => 'nullable|string',
+            'tanggal_asesmen' => 'nullable|date',
+            'extra' => 'nullable|array',
+        ]);
+
+        try {
+            $submission = Ia02Submission::create($validated);
+            return response()->json([
+                'success' => true,
+                'message' => 'IA-02 submission berhasil disimpan',
+                'submission_id' => $submission->id,
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('IA-02 Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal submit IA-02',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Get IA-02 submissions by asesi id via assesment_asesi relation
+    public function getIa02ByAssesi($assesi_id)
+    {
+        try {
+            $submissions = Ia02Submission::whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
+                $q->where('assesi_id', $assesi_id);
+            })->get();
+
+            if ($submissions->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'IA-02 submissions not found for the given assesi ID.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'IA-02 submissions retrieved successfully.',
+                'data' => $submissions,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get IA-02 Submission Error: ' . $e->getMessage(), [
+                'assesi_id' => $assesi_id,
+                'user_id' => auth()->id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve IA-02 submissions.',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
+    public function formAk04(Request $request)
+    {
+        $validated = $request->validate([
+            'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
+            'nama_asesor' => 'nullable|string',
+            'nama_asesi' => 'nullable|string',
+            'tanggal_asesmen' => 'nullable|date',
+            'skema_sertifikasi' => 'nullable|string',
+            'no_skema_sertifikasi' => 'nullable|string',
+            'alasan_banding' => 'nullable|string',
+            'tanggal_approve' => 'nullable|date',
+            'answers' => 'nullable|array',
+        ]);
+
+        try {
+            $submission = Ak04Submission::create($validated);
+            return response()->json([
+                'success' => true,
+                'message' => 'AK04 submission berhasil disimpan',
+                'submission_id' => $submission->id,
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('AK04 Submission Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal submit AK04',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getAk04ByAssesi($assesi_id)
+    {
+        try {
+            $submissions = Ak04Submission::whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
+                $q->where('assesi_id', $assesi_id);
+            })->get();
+
+            if ($submissions->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AK04 submissions not found for the given assesi ID.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'AK04 submissions retrieved successfully.',
+                'data' => $submissions,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get AK04 Submission Error: ' . $e->getMessage(), [
+                'assesi_id' => $assesi_id,
+                'user_id' => auth()->id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve AK04 submissions.',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
     }
     public function createAssesment(Request $request)
     {
@@ -551,15 +839,15 @@ class AssesmentController extends Controller
         $validated = $request->validate([
             'skema_id' => 'required|exists:schemas,id',
             'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
-            'submissions' => 'required|array',
-            'submissions.*.unit_ke' => 'required|integer',
-            'submissions.*.kode_unit' => 'required|string',
-            'submissions.*.elemen' => 'required|array',
-            'submissions.*.elemen.*.elemen_id' => 'required|exists:elements,id',
-            'submissions.*.elemen.*.kuk' => 'required|array',
-            'submissions.*.elemen.*.kuk.*.kuk_id' => 'required|exists:kriteria_untuk_kerja,id',
-            'submissions.*.elemen.*.kuk.*.skkni' => 'required|in:ya,tidak',
-            'submissions.*.elemen.*.kuk.*.teks_penilaian' => 'required|string'
+            'submissions' => 'sometimes|array',
+            'submissions.*.unit_ke' => 'required_with:submissions|integer',
+            'submissions.*.kode_unit' => 'required_with:submissions|string',
+            'submissions.*.elemen' => 'required_with:submissions|array',
+            'submissions.*.elemen.*.elemen_id' => 'required_with:submissions|exists:elements,id',
+            'submissions.*.elemen.*.kuk' => 'required_with:submissions|array',
+            'submissions.*.elemen.*.kuk.*.kuk_id' => 'required_with:submissions|exists:kriteria_untuk_kerja,id',
+            'submissions.*.elemen.*.kuk.*.skkni' => 'required_with:submissions|in:ya,tidak',
+            'submissions.*.elemen.*.kuk.*.teks_penilaian' => 'required_with:submissions|string'
         ],
         [
             // General errors
@@ -568,66 +856,69 @@ class AssesmentController extends Controller
             'assesment_asesi_id.required' => 'ID asesmen asesi wajib diisi.',
             'assesment_asesi_id.exists' => 'ID asesmen asesi tidak ditemukan dalam sistem.',
 
-            // Submissions array errors
-            'submissions.required' => 'Data submissions wajib diisi.',
+            // Submissions array errors (optional for CL page)
             'submissions.array' => 'Data submissions harus berupa array.',
 
             // Unit-specific errors
-            'submissions.*.unit_ke.required' => 'Unit ke wajib diisi untuk setiap submission.',
+            'submissions.*.unit_ke.required_with' => 'Unit ke wajib diisi untuk setiap submission.',
             'submissions.*.unit_ke.integer' => 'Unit ke harus berupa angka.',
-            'submissions.*.kode_unit.required' => 'Kode unit wajib diisi untuk setiap submission.',
+            'submissions.*.kode_unit.required_with' => 'Kode unit wajib diisi untuk setiap submission.',
             'submissions.*.kode_unit.string' => 'Kode unit harus berupa teks.',
 
             // Elemen-specific errors
-            'submissions.*.elemen.required' => 'Data elemen wajib diisi untuk setiap submission.',
+            'submissions.*.elemen.required_with' => 'Data elemen wajib diisi untuk setiap submission.',
             'submissions.*.elemen.array' => 'Data elemen harus berupa array.',
-            'submissions.*.elemen.*.elemen_id.required' => 'ID elemen wajib diisi untuk setiap elemen.',
+            'submissions.*.elemen.*.elemen_id.required_with' => 'ID elemen wajib diisi untuk setiap elemen.',
             'submissions.*.elemen.*.elemen_id.exists' => 'ID elemen tidak ditemukan dalam sistem.',
 
             // KUK-specific errors
-            'submissions.*.elemen.*.kuk.required' => 'Data KUK wajib diisi untuk setiap elemen.',
+            'submissions.*.elemen.*.kuk.required_with' => 'Data KUK wajib diisi untuk setiap elemen.',
             'submissions.*.elemen.*.kuk.array' => 'Data KUK harus berupa array.',
-            'submissions.*.elemen.*.kuk.*.kuk_id.required' => 'ID KUK wajib diisi untuk setiap KUK.',
+            'submissions.*.elemen.*.kuk.*.kuk_id.required_with' => 'ID KUK wajib diisi untuk setiap KUK.',
             'submissions.*.elemen.*.kuk.*.kuk_id.exists' => 'ID KUK tidak ditemukan dalam sistem.',
-            'submissions.*.elemen.*.kuk.*.skkni.required' => 'SKKNI wajib diisi untuk setiap KUK.',
+            'submissions.*.elemen.*.kuk.*.skkni.required_with' => 'SKKNI wajib diisi untuk setiap KUK.',
             'submissions.*.elemen.*.kuk.*.skkni.in' => 'SKKNI hanya boleh bernilai "ya" atau "tidak".',
-            'submissions.*.elemen.*.kuk.*.teks_penilaian.required' => 'Teks penilaian wajib diisi untuk setiap KUK.',
+            'submissions.*.elemen.*.kuk.*.teks_penilaian.required_with' => 'Teks penilaian wajib diisi untuk setiap KUK.',
             'submissions.*.elemen.*.kuk.*.teks_penilaian.string' => 'Teks penilaian harus berupa teks.'
         ]);
 
-        $assesor = auth()->user()->assesor;
-        if (!$assesor) {
-            return response()->json(['message' => 'Assesor not found'], 404);
+        // Prefer assesor from the related assessment, fallback to authenticated user's assesor if any
+        $assesment_assesi = Assesment_Asesi::where('id', $validated['assesment_asesi_id'])->first();
+        $assesi = Assesi::where('id', $assesment_assesi->assesi_id)->first();
+        $assesment = Assesment::where('id', $assesment_assesi->assesment_id)->first();
+        $assesorId = $assesment?->assesor_id;
+        $authAssesor = auth()->user()->assesor ?? null;
+        if (!$assesorId && $authAssesor) {
+            $assesorId = $authAssesor->id;
         }
 
         DB::beginTransaction();
         try {
-            $assesment_assesi = Assesment_Asesi::where('id', $validated['assesment_asesi_id'])->first();
-            $assesi = Assesi::where('id', $assesment_assesi->assesi_id)->first();
-
             // Create the main submission
             $mainSubmission = FormIa01Submission::create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
-                'assesor_id' => $assesor->id,
+                'assesor_id' => $assesorId,
                 'assesi_id' => $assesi->id,
                 'skema_id' => $validated['skema_id'],
                 'submission_date' => now()
             ]);
 
-            // Process each submission
-            foreach ($validated['submissions'] as $unit) {
-                foreach ($unit['elemen'] as $elemen) {
-                    foreach ($elemen['kuk'] as $kuk) {
-                        // Create submission details for KUK
-                        $submissionDetail = FormIa01SubmissionDetail::create([
-                            'submission_id' => $mainSubmission->id,
-                            'unit_ke' => $unit['unit_ke'],
-                            'kode_unit' => $unit['kode_unit'],
-                            'elemen_id' => $elemen['elemen_id'],
-                            'kuk_id' => $kuk['kuk_id'], // Tambahkan kolom kuk_id
-                            'skkni' => $kuk['skkni'],
-                            'teks_penilaian' => $kuk['teks_penilaian']
-                        ]);
+            // Process each submission if provided
+            if (!empty($validated['submissions']) && is_array($validated['submissions'])) {
+                foreach ($validated['submissions'] as $unit) {
+                    foreach ($unit['elemen'] as $elemen) {
+                        foreach ($elemen['kuk'] as $kuk) {
+                            // Create submission details for KUK
+                            $submissionDetail = FormIa01SubmissionDetail::create([
+                                'submission_id' => $mainSubmission->id,
+                                'unit_ke' => $unit['unit_ke'],
+                                'kode_unit' => $unit['kode_unit'],
+                                'elemen_id' => $elemen['elemen_id'],
+                                'kuk_id' => $kuk['kuk_id'], // Tambahkan kolom kuk_id
+                                'skkni' => $kuk['skkni'],
+                                'teks_penilaian' => $kuk['teks_penilaian']
+                            ]);
+                        }
                     }
                 }
             }

@@ -50,7 +50,8 @@ class IaDocController extends Controller
         $validated = $request->validate([
             'skema_id' => 'required|integer',
             'form' => 'required|string', // e.g., IA-01-CL, IA-02-TPD
-            'file' => 'required|file|mimes:doc,docx|max:20480', // up to ~20MB
+            // Keep upload simple; enforce extension below to avoid false negatives from PHP fileinfo/mime detection
+            'file' => 'required|file|max:20480',
         ]);
 
         $form = strtoupper($validated['form']);
@@ -59,12 +60,21 @@ class IaDocController extends Controller
 
         $dir = "ia_docs/{$skemaId}";
         Storage::disk('local')->makeDirectory($dir);
-        $path = $dir . '/' . $filename;
 
-        // Store file, overwrite if exists
-        $stream = fopen($request->file('file')->getRealPath(), 'r');
-        Storage::disk('local')->put($path, $stream);
-        if (is_resource($stream)) fclose($stream);
+        // Extra guard: ensure correct extension by original filename
+        $uploaded = $request->file('file');
+        $ext = strtolower($uploaded->getClientOriginalExtension() ?: '');
+        if (!in_array($ext, ['doc', 'docx'])) {
+            return response()->json([
+                'status' => 'false',
+                'message' => 'File harus berekstensi .doc atau .docx',
+                'errors' => ['file' => ['File harus berekstensi .doc atau .docx']],
+            ], 422);
+        }
+
+        // Use storeAs to preserve filename and ensure correct handling
+        $uploaded->storeAs($dir, $filename, 'local');
+        $path = $dir . '/' . $filename;
 
         return response()->json([
             'status' => 'true',
@@ -81,14 +91,26 @@ class IaDocController extends Controller
     public function listBySkema(Request $request, int $skema_id)
     {
         $dir = "ia_docs/{$skema_id}";
-        if (!Storage::disk('local')->exists($dir)) {
-            return response()->json([
-                'status' => 'true',
-                'message' => 'No IA docs found',
-                'data' => [],
-            ], 200);
+
+        // Some storage drivers may return false for directories with exists(); attempt to read files regardless.
+        try {
+            // Prefer directoryExists if available (Laravel 10)
+            if (method_exists(Storage::disk('local'), 'directoryExists')) {
+                if (!Storage::disk('local')->directoryExists($dir)) {
+                    return response()->json([
+                        'status' => 'true',
+                        'message' => 'No IA docs found',
+                        'data' => [],
+                    ], 200);
+                }
+            }
+
+            $files = Storage::disk('local')->files($dir);
+        } catch (\Throwable $e) {
+            // If listing fails (e.g., directory truly missing), return empty
+            $files = [];
         }
-        $files = Storage::disk('local')->files($dir);
+
         $docs = array_values(array_filter($files, function ($f) {
             return preg_match('/\.docx?$/i', $f);
         }));

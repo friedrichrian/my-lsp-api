@@ -72,6 +72,71 @@ class AssesiController extends Controller
         }
     }
 
+    public function profileSelf(Request $request)
+    {
+        $user = $request->user();
+        $assesi = Assesi::with('jurusan')->where('user_id', $user->id)->first();
+
+        if (!$assesi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assesi profile not found for current user.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile retrieved successfully',
+            'data' => [
+                'user' => $user->only(['id','username','email','jurusan_id','role']),
+                'assesi' => $assesi,
+            ]
+        ], 200);
+    }
+
+    public function updateSelf(Request $request)
+    {
+        $user = $request->user();
+        $assesi = Assesi::where('user_id', $user->id)->first();
+        if (!$assesi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assesi profile not found for current user.'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'nama_lengkap' => 'sometimes|required|string|max:255',
+            'no_ktp' => 'sometimes|required|string|max:16|unique:assesi,no_ktp,' . $assesi->id . '|regex:/^[0-9]+$/',
+            'tempat_lahir' => 'sometimes|required|string|max:255',
+            'tanggal_lahir' => 'sometimes|required|date',
+            'alamat' => 'sometimes|required|string|max:255',
+            'no_telepon' => 'sometimes|required|string|max:15|regex:/^[0-9]+$/',
+            'jenis_kelamin' => 'sometimes|required|in:Laki-laki,Perempuan',
+            'kode_pos' => 'sometimes|required|string|max:10|regex:/^[0-9]+$/',
+            'kualifikasi_pendidikan' => 'sometimes|required|string|max:255',
+        ]);
+
+        try {
+            $assesi->update($validated);
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully',
+                'data' => $assesi
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Failed to update self profile: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update profile',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
     public function index()
     {
         $assesis = Assesi::with(['user', 'jurusan'])->get();
