@@ -181,4 +181,26 @@ class ApprovementController extends Controller
             ], 500);
         }
     }
+
+    // List bukti dokumen milik asesi yang sedang login
+    public function listBuktiDokumenSelf(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user || !$user->assesi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assesi not found for current user'
+            ], 404);
+        }
+
+        $rows = BuktiDokumenAssesi::where('assesi_id', $user->assesi->id)
+            ->select('id', 'description', 'nama_dokumen')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $rows
+        ]);
+    }
 }
