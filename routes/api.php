@@ -13,6 +13,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssesmentAsesiController;
 use App\Http\Controllers\JurusanController;
 use \App\Http\Controllers\QuestionController;
+use App\Http\Controllers\IaDocController;
 
     // Hanya 10 request per menit per user/IP
     Route::prefix('auth')->group(function () {
@@ -78,6 +79,9 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/questions/{id}', [QuestionController::class, 'updateQuestion']);
     Route::delete('/questions/{id}', [QuestionController::class, 'deleteQuestion']);
     Route::get('/questions/skema/{skema_id}', [QuestionController::class, 'getQuestionsBySkema']);
+
+    // IA Docs upload (admin only)
+    Route::post('/ia/docs/upload', [IaDocController::class, 'upload']);
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -123,6 +127,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
 
     Route::get('/apl02/assesi/{id}', [AssesmentController::class, 'showApl02ByAssesi']);
+
+    // IA Docs download (serve .docx per form and skema)
+    Route::get('/ia/docs/{form}/{skema_id}', [IaDocController::class, 'download']);
+    // IA Docs list for a skema
+    Route::get('/ia/docs/list/{skema_id}', [IaDocController::class, 'listBySkema']);
 
     // Routes Assesment for Assesor
     Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');

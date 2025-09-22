@@ -37,42 +37,42 @@ class UserSeeder extends Seeder
                 'username' => 'asesi_rpl1',
                 'email' => 'asesi.rpl1@student.smkn24.ac.id',
                 'password' => Hash::make('password123'),
-                'role' => 'asesi',
+                'role' => 'assesi',
                 'jurusan_id' => 1 // RPL
             ],
             [
                 'username' => 'asesi_rpl2',
                 'email' => 'asesi.rpl2@student.smkn24.ac.id',
                 'password' => Hash::make('password123'),
-                'role' => 'asesi',
+                'role' => 'assesi',
                 'jurusan_id' => 1 // RPL
             ],
             [
                 'username' => 'asesi_tbg1',
-                'email' => 'asesi.tbg1@student.smkn24.ac.id',
+                'email' => 'assesi.tbg1@student.smkn24.ac.id',
                 'password' => Hash::make('password123'),
-                'role' => 'asesi',
+                'role' => 'assesi',
                 'jurusan_id' => 2 // TBG
             ],
             [
-                'username' => 'asesi_ph1',
-                'email' => 'asesi.ph1@student.smkn24.ac.id',
+                'username' => 'assesi_ph1',
+                'email' => 'assesi.ph1@student.smkn24.ac.id',
                 'password' => Hash::make('password123'),
-                'role' => 'asesi',
+                'role' => 'assesi',
                 'jurusan_id' => 3 // PH
             ],
             [
-                'username' => 'asesi_bsn1',
-                'email' => 'asesi.bsn1@student.smkn24.ac.id',
+                'username' => 'assesi_bsn1',
+                'email' => 'assesi.bsn1@student.smkn24.ac.id',
                 'password' => Hash::make('password123'),
-                'role' => 'asesi',
+                'role' => 'assesi',
                 'jurusan_id' => 4 // BSN
             ],
             [
-                'username' => 'asesi_ulw1',
-                'email' => 'asesi.ulw1@student.smkn24.ac.id',
+                'username' => 'assesi_ulw1',
+                'email' => 'assesi.ulw1@student.smkn24.ac.id',
                 'password' => Hash::make('password123'),
-                'role' => 'asesi',
+                'role' => 'assesi',
                 'jurusan_id' => 5 // ULW
             ]
         ];

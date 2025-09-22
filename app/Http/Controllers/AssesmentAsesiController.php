@@ -145,6 +145,7 @@ class AssesmentAsesiController extends Controller
     {
         $validated = $request->validate([
             'assesment_id' => 'required|exists:assesments,id',
+            // Table name is 'assesi' as per migration and model
             'assesi_id'    => 'required|exists:assesi,id',
         ]);
 
@@ -186,7 +187,7 @@ class AssesmentAsesiController extends Controller
         $assesmentAsesi = Assesment_Asesi::findOrFail($id);
         $validated = $request->validate([
             'assesment_id' => 'sometimes|exists:assesments,id',
-            'assesi_id' => 'sometimes|exists:asesis,id',
+            'assesi_id' => 'sometimes|exists:assesi,id',
             'status' => 'sometimes|in:k,bk',
         ]);
 

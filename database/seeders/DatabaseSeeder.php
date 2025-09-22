@@ -23,7 +23,10 @@ class DatabaseSeeder extends Seeder
             QuestionSeeder::class,
             FormApl01Seeder::class,
             BuktiDokumenSeeder::class,
+            BuktiDokumenAsesiRpl1Seeder::class,
             AssesmentAsesiSeeder::class,
+            IaDocSeeder::class,
+            DemoRpl1AssesiSeeder::class,
         ]);
     }
 }
