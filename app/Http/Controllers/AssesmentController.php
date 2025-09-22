@@ -998,7 +998,14 @@ class AssesmentController extends Controller
     }
 
     public function showApl02ByAssesi($assesi_id){
-        $apl02 = FormApl02Submission::where('assesi_id', $assesi_id)->with('details.attachments.bukti')->get();
+        $apl02 = FormApl02Submission::whereHas('assesment_asesi', function ($query) use ($assesi_id) {
+                $query->where('assesi_id', $assesi_id);
+            })
+            ->with([
+                'details.attachments.bukti',
+                'assesmentAsesi' // biar kelihatan relasi induknya juga
+            ])
+            ->get();
 
         if ($apl02->isEmpty()) {
             return response()->json([

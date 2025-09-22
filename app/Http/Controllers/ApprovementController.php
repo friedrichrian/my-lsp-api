@@ -47,7 +47,7 @@ class ApprovementController extends Controller
     }
 
     public function showFormApl01ByUser($id){
-        $formApl01 = FormApl01::with('user', 'attachments')
+        $formApl01 = FormApl01::with('user', 'attachments', 'sertificationData')
             ->where('user_id', $id)
             ->first();
 
