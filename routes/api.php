@@ -124,7 +124,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/apl02/assesi/{id}', [AssesmentController::class, 'showApl02ByAssesi']);
 
     // Routes Assesment for Assesor
-    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
+    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex']);
     Route::get('/debug', [AssesmentController::class, 'debug']);
 
     Route::get('/status/asesi/assesment', [AssesmentController::class, 'getAssesmentAssesiStatus']);
