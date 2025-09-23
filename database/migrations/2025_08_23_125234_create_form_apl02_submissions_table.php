@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::create('form_apl02_submissions', function (Blueprint $table) {
             $table->id();
-            $table->boolean('ttd_asesi')->default(false);   // tanda tangan asesi
-            $table->boolean('ttd_assesor')->default(false); // tanda tangan asesor
             $table->dateTime('submission_date');
             $table->timestamps();
         });

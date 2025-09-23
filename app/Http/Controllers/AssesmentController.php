@@ -317,9 +317,9 @@ class AssesmentController extends Controller
         DB::beginTransaction();
         try {
             // Create the main submission
-            $mainSubmission = $assesi->apl02Submissions()->create([
+            $mainSubmission = FormApl02Submission::create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
-                'submission_date' => now()
+                'submission_date' => now(),
             ]);
 
             // Preload all relevant bukti dokumen for efficiency
@@ -373,9 +373,10 @@ class AssesmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to submit APL02',
-                'error' => 'An unexpected error occurred. Please try again later.'
+                'error' => 'An unexpected error occurred. Please try again later. ->'. $e->getMessage()
             ], 500);
         }
+
     }
 
     public function formAk01(Request $request)
@@ -391,7 +392,6 @@ class AssesmentController extends Controller
             // Create the main AK01 submission
             $ak01Submission = FormAk01Submission::Create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
-                'skema_id' => $validated['skema_id'],
                 'submission_date' => now()
             ]);
 
@@ -998,12 +998,34 @@ class AssesmentController extends Controller
     }
 
     public function showApl02ByAssesi($assesi_id){
-        $apl02 = FormApl02Submission::whereHas('assesment_asesi', function ($query) use ($assesi_id) {
-                $query->where('assesi_id', $assesi_id);
-            })
+        // Ambil semua FormApl02Submission yang punya assesment_asesi dengan assesi_id tertentu
+        $apl02 = FormApl02Submission::whereHas('assesment_asesi', function($query) use ($assesi_id) {
+            $query->where('assesi_id', $assesi_id);
+        })
+        ->with(['details.attachments.bukti', 'assesment_asesi']) // eager load relasi
+        ->get();
+
+        if($apl02->isEmpty()){
+            return response()->json([
+                'status' => false,
+                'message' => 'Data APL-02 tidak ditemukan untuk assesi ini',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Apl 02 by assesi',
+            'data' => $apl02,
+        ], 200);
+    }
+
+
+    public function showApl02ByAssesmentAssesi($id){
+        $apl02 = FormApl02Submission::where('assesment_asesi_id', $id) 
             ->with([
                 'details.attachments.bukti',
-                'assesmentAsesi' // biar kelihatan relasi induknya juga
+                'assesment_asesi' // biar kelihatan relasi induknya juga
             ])
             ->get();
 

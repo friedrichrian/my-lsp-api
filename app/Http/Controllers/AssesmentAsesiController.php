@@ -77,7 +77,7 @@ class AssesmentAsesiController extends Controller
     {
         try {
             $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)
-            ->with('asesi')
+            ->with('assesi')
             ->get();
 
             if ($assesmentAsesi->isEmpty()) {

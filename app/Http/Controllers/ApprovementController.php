@@ -139,7 +139,7 @@ class ApprovementController extends Controller
             'ttd_assesor' => 'required|in:approved,rejected',
         ]);
 
-        $apl02submission = FormApl02Submission::firstWhere('id', $id);
+        $apl02submission = FormApl02Submission::firstWhere('assesment_asesi_id', $id);
 
         DB::beginTransaction();
         try {

@@ -16,13 +16,12 @@ class FormApl02Submission extends Model
         'ttd_assesor'
     ];
 
-    public function element(){
-        return $this->belongsTo(Element::class, 'elements_id');
+    public function details(){
+        return $this->hasMany(FormApl02SubmissionDetail::class, 'submission_id')
+                    ->with('attachments.bukti'); // langsung eager load
     }
 
-    public function details(){
-        return $this->hasMany(FormApl02SubmissionDetail::class, 'submission_id');
-    }
+    
 
     public function assesment_asesi()
     {

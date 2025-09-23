@@ -32,6 +32,11 @@ class Assesment_Asesi extends Model
         return $this->belongsTo(Assesi::class, 'assesi_id', 'id');
     }
 
+    public function asesi(): BelongsTo
+    {
+        return $this->belongsTo(Assesi::class, 'assesi_id', 'id');
+    }
+
     /**
      * Relasi ke Form APL02
      */
