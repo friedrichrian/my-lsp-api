@@ -18,42 +18,6 @@ class AssesiSeeder extends Seeder
 
         $asesiData = [
             [
-                'username' => 'asesi_rpl1',
-                'nama_lengkap' => 'Ahmad Rizki Pratama',
-                'no_ktp' => '3201234567890123',
-                'tempat_lahir' => 'Jakarta',
-                'tanggal_lahir' => '2005-03-15',
-                'jenis_kelamin' => 'Laki-laki',
-                'alamat' => 'Jl. Merdeka No. 123, Jakarta Pusat',
-                'kode_pos' => '10110',
-                'no_telepon' => '081234567890',
-                'kualifikasi_pendidikan' => 'SMK'
-            ],
-            [
-                'username' => 'asesi_rpl2',
-                'nama_lengkap' => 'Siti Nurhaliza',
-                'no_ktp' => '3201234567890124',
-                'tempat_lahir' => 'Bandung',
-                'tanggal_lahir' => '2005-07-22',
-                'jenis_kelamin' => 'Perempuan',
-                'alamat' => 'Jl. Asia Afrika No. 456, Bandung',
-                'kode_pos' => '40111',
-                'no_telepon' => '081234567891',
-                'kualifikasi_pendidikan' => 'SMK'
-            ],
-            [
-                'username' => 'asesi_tbg1',
-                'nama_lengkap' => 'Budi Santoso',
-                'no_ktp' => '3201234567890125',
-                'tempat_lahir' => 'Surabaya',
-                'tanggal_lahir' => '2005-01-10',
-                'jenis_kelamin' => 'Laki-laki',
-                'alamat' => 'Jl. Diponegoro No. 789, Surabaya',
-                'kode_pos' => '60241',
-                'no_telepon' => '081234567892',
-                'kualifikasi_pendidikan' => 'SMK'
-            ],
-            [
                 'username' => 'asesi_ph1',
                 'nama_lengkap' => 'Dewi Kartika',
                 'no_ktp' => '3201234567890126',
