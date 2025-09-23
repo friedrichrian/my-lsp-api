@@ -131,6 +131,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment-asesi/byAsesor/{id}', [AssesmentAsesiController::class, 'showByAsesor']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
 
+    // Self profile endpoints
+    Route::get('/profile', [AssesiController::class, 'profileSelf']);
+    Route::put('/profile', [AssesiController::class, 'updateSelf']);
+
     Route::get('/formApl01', [AssesiController::class, 'show']);
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
 
@@ -147,5 +151,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/status/asesi/assesment', [AssesmentController::class, 'getAssesmentAssesiStatus']);
     Route::post('/status/asesi/assesment', [AssesmentController::class, 'assesmentAssesiStatus']);
+
+    // Questions (read/answer for authenticated users)
+    Route::get('/questions/skema/{skema_id}', [QuestionController::class, 'getQuestionsBySkema']);
+    Route::post('/questions/answer', [QuestionController::class, 'submitAnswer']);
+
+    // Profile self routes
+    Route::get('/profile/self', [AssesiController::class, 'profileSelf']);
+    Route::put('/profile/self', [AssesiController::class, 'updateSelf']);
 
 });
