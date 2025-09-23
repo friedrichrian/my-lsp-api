@@ -680,6 +680,7 @@ class AssesmentController extends Controller
             // Create the main AK01 submission
             $ak01Submission = FormAk01Submission::Create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
+                'ttd_assesor' => 1,
                 'submission_date' => now()
             ]);
 
@@ -834,8 +835,6 @@ class AssesmentController extends Controller
         ],
         [
             // General errors
-            'skema_id.required' => 'ID skema wajib diisi.',
-            'skema_id.exists' => 'ID skema tidak ditemukan dalam sistem.',
             'assesment_asesi_id.required' => 'ID asesmen asesi wajib diisi.',
             'assesment_asesi_id.exists' => 'ID asesmen asesi tidak ditemukan dalam sistem.',
 
@@ -880,9 +879,6 @@ class AssesmentController extends Controller
             // Create the main submission
             $mainSubmission = FormIa01Submission::create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
-                'assesor_id' => $assesorId,
-                'assesi_id' => $assesi->id,
-                'skema_id' => $validated['skema_id'],
                 'submission_date' => now()
             ]);
 
@@ -1371,9 +1367,13 @@ class AssesmentController extends Controller
     public function showAk01ByAssesi($assesi_id)
     {
         try {
-            $ak01 = FormAk01Submission::where('assesment_asesi_id', $assesi_id)
-                ->with('attachments') // cukup 'attachments', jangan 'form_ak01_submissions.attachments'
+            $ak01 = FormAk01Submission::with('attachments')
+                ->whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
+                    $q->where('assesi_id', $assesi_id);
+                })
                 ->get();
+
+
 
             return response()->json([
                 'status'  => true,

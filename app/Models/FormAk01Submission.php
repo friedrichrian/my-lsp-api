@@ -26,6 +26,10 @@ class FormAk01Submission extends Model
         return $this->belongsTo(Schema::class, 'skema_id');
     }
 
+    public function assesmentAsesi(){
+        return $this->belongsTo(Assesment_Asesi::class, 'assesment_asesi_id');
+    }
+
 
     /**
      * Relasi ke attachments (ak01_attachments)
