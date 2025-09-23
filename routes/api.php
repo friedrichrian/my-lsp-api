@@ -53,8 +53,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::put('/jurusan/{id}', [JurusanController::class, 'update']);
     Route::delete('/jurusan/{id}', [JurusanController::class, 'destroy']);
 
-    //Approvement Details routes
-    Route::get('/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
 
     //Approvement routes
     Route::get('/assesment/formapl01', [ApprovementController::class, 'indexingFormApl01']);
@@ -125,11 +123,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
-    Route::get('/assesment-asesi', [AssesmentAsesiController::class, 'index']);
-    Route::post('/assesment-asesi', [AssesmentAsesiController::class, 'store']);
-    Route::get('/assesment-asesi/byAsesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
-    Route::get('/assesment-asesi/byAsesor/{id}', [AssesmentAsesiController::class, 'showByAsesor']);
+    Route::get('/user/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByUser']);
+    Route::post('/asesi/assesment-asesi', [AssesmentAsesiController::class, 'store']);
+    Route::get('/asesi/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
+    Route::get('/assesor/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showAssesmentAsesiByAssesment']);
     Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
+    //Approvement Details routes
+    Route::get('/show/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01']);
+    Route::get('/user/show/approvement/assesment/formapl01/{id}', [ApprovementController::class, 'showFormApl01ByUser']);
+
 
     // Self profile endpoints
     Route::get('/profile', [AssesiController::class, 'profileSelf']);
@@ -139,6 +141,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
 
     Route::get('/apl02/assesi/{id}', [AssesmentController::class, 'showApl02ByAssesi']);
+    Route::get('/apl02/assesment-asesi/{id}', [AssesmentController::class, 'showApl02ByAssesmentAssesi']);
 
     // IA Docs list for a skema (must be before dynamic route)
     Route::get('/ia/docs/list/{skema_id}', [IaDocController::class, 'listBySkema']);
@@ -146,7 +149,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/ia/docs/{form}/{skema_id}', [IaDocController::class, 'download']);
 
     // Routes Assesment for Assesor
-    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex'])->middleware('approve');
+    Route::get('/schema', [Apl02ImportController::class, 'schemaIndex']);
     Route::get('/debug', [AssesmentController::class, 'debug']);
 
     Route::get('/status/asesi/assesment', [AssesmentController::class, 'getAssesmentAssesiStatus']);

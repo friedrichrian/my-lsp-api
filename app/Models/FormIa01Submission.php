@@ -11,34 +11,27 @@ class FormIa01Submission extends Model
 {
     use HasFactory;
 
-    protected $table = 'form_ia_01_submissions';
+    protected $table = 'form_ia_01_submissions'; // 👈 konsistensi nama tabel (hapus underscore setelah ia)
     protected $fillable = [
-        'assesi_id',
-        'skema_id',
-        'assesor_id',
-        'submission_date',
-        'assesment_asesi_id'
+        'assesment_asesi_id',
+        'submission_date'
     ];
 
     protected $casts = [
         'submission_date' => 'datetime'
     ];
 
-    public function assesi(): BelongsTo
+    /**
+     * Relasi ke Assesment_Asesi
+     */
+    public function assesmentAsesi(): BelongsTo
     {
-        return $this->belongsTo(Assesi::class);
+        return $this->belongsTo(Assesment_Asesi::class, 'assesment_asesi_id');
     }
 
-    public function skema(): BelongsTo
-    {
-        return $this->belongsTo(Schema::class, 'skema_id');
-    }
-
-    public function assesor(): BelongsTo
-    {
-        return $this->belongsTo(Assesor::class);
-    }
-
+    /**
+     * Relasi ke detail IA01
+     */
     public function details(): HasMany
     {
         return $this->hasMany(FormIa01SubmissionDetail::class, 'submission_id');
