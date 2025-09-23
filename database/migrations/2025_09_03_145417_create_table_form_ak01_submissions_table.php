@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('form_ak01_submissions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('assesment_asesi_id')->constrained('assesment_asesi')->onDelete('cascade');
-            $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
+            $table->boolean('ttd_asesi')->default(false);   // tanda tangan asesi
+            $table->boolean('ttd_assesor')->default(false);
             $table->enum('status', ['pending', 'approved'])->default('pending');
             $table->dateTime('submission_date');
             $table->timestamps();
@@ -23,7 +24,6 @@ return new class extends Migration
         Schema::create('ak01_attachments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('submission_id')->constrained('form_ak01_submissions')->onDelete('cascade');
-            $table->string('file_path');
             $table->string('description')->nullable();
             $table->timestamps();
         });

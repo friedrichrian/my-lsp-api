@@ -13,7 +13,6 @@ class FormAk01Attachment extends Model
 
     protected $fillable = [
         'submission_id',
-        'file_path',
         'description',
     ];
 

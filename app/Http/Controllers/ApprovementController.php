@@ -47,6 +47,24 @@ class ApprovementController extends Controller
         }
     }
 
+    public function showFormApl01ByUser($id){
+        $formApl01 = FormApl01::with('user', 'attachments', 'sertificationData')
+            ->where('user_id', $id)
+            ->first();
+
+        if (!$formApl01) {
+            return response()->json(['message' => 'Form APL01 not found'], 404);
+        }
+
+        // tambahkan URL view untuk tiap attachment
+        $formApl01->attachments->transform(function ($attachment) {
+            $attachment->view_url = route('form-apl01.attachment.view', $attachment->id);
+            return $attachment;
+        });
+
+        return response()->json($formApl01);
+    }
+
     public function showFormApl01($id)
     {
         $formApl01 = FormApl01::with('user', 'attachments')
@@ -73,7 +91,7 @@ class ApprovementController extends Controller
         ]);
 
         $formApl01 = FormApl01::with('user', 'attachments')
-            ->where('id', $id)
+            ->where('user_id', $id)
             ->first();
 
         DB::beginTransaction();
@@ -121,7 +139,7 @@ class ApprovementController extends Controller
             'ttd_assesor' => 'required|in:approved,rejected',
         ]);
 
-        $apl02submission = FormApl02Submission::firstWhere('id', $id);
+        $apl02submission = FormApl02Submission::firstWhere('assesment_asesi_id', $id);
 
         DB::beginTransaction();
         try {

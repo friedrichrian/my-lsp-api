@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('form_ia_01_submissions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('assesi_id')->constrained('assesi')->onDelete('cascade');
-            $table->foreignId('skema_id')->constrained('schemas')->onDelete('cascade');
-            $table->foreignId('assesor_id')->nullable()->constrained('assesor')->onDelete('cascade');
+            $table->boolean('ttd_asesi')->default(false);   // tanda tangan asesi
+            $table->boolean('ttd_assesor')->default(false);
             $table->dateTime('submission_date');
             $table->timestamps();
             $table->foreignId('assesment_asesi_id')
