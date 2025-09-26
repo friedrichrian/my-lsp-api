@@ -488,61 +488,7 @@ class Apl02ImportController extends Controller
                 'id' => $jurusan->id,
                 'nama_jurusan' => $jurusan->nama_jurusan
             ],
-            'judul_skema' => $schema->judul_skema,
-            'nomor_skema' => $schema->nomor_skema,
-            'data' => $schema->units->map(function($unit) {
-                return [
-                    'unit_ke' => $unit->unit_ke,
-                    'kode_unit' => $unit->kode_unit,
-                    'judul_unit' => $unit->judul_unit,
-                    'elemen' => $unit->elements
-                        ->sortBy('elemen_index')
-                        ->mapWithKeys(function($element) {
-                            return [
-                                $element->elemen_index => [
-                                    'id' => $element->id,
-                                    'elemen_index' => $element->elemen_index,
-                                    'nama_elemen' => $element->nama_elemen,
-                                    'kuk' => $element->kriteriaUntukKerja
-                                        ->sortBy('urutan')
-                                        ->map(function($kuk) {
-                                            return [
-                                                'urutan' => $kuk->urutan,
-                                                'deskripsi_kuk' => $kuk->deskripsi_kuk
-                                            ];
-                                        })
-                                        ->values()
-                                        ->toArray()
-                                ]
-                            ];
-                        })
-                ];
-            })->sortBy('unit_ke')->values()->toArray()
-        ]);
-    }
-
-    public function schemaIndex() {
-        $schemas = Schema::with(['jurusan', 'units.elements.kriteriaUntukKerja'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-        return response()->json([
-            'success' => true,
-            'data' => $schemas->map(function($schema) {
-                return [
-                    'id' => $schema->id,
-                    'judul_skema' => $schema->judul_skema,
-                    'nomor_skema' => $schema->nomor_skema,
-                    'jurusan' => [
-                        'id' => $schema->jurusan->id,
-                        'nama_jurusan' => $schema->jurusan->nama_jurusan
-                    ],
-                    'total_units' => $schema->units()->count(),
-                    'total_elements' => $schema->units()->withCount('elements')->get()->sum('elements_count'),
-                    'total_kuk' => $schema->countTotalKuk(),
-                    'created_at' => $schema->created_at,
-                ];
-            })
+            'data' => $schema
         ]);
     }
 
