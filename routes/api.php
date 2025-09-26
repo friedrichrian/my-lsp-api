@@ -123,6 +123,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
+    Route::get('/assesment-asesi', [AssesmentAsesiController::class, 'index']);
     Route::get('/user/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByUser']);
     Route::post('/asesi/assesment-asesi', [AssesmentAsesiController::class, 'store']);
     Route::get('/asesi/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
