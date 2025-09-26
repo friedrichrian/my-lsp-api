@@ -10,6 +10,9 @@ class Ak02Submission extends Model
 
     protected $fillable = [
         'assesment_asesi_id',
+        'rekomendasi_hasil',
+        'tindak_lanjut',
+        'komentar_asesor',
         'ttd_asesi',
         'ttd_asesor',
     ];

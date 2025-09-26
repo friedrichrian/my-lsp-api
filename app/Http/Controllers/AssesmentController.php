@@ -23,6 +23,8 @@ use App\Models\Ak03SubmissionDetail;
 use App\Models\Komponen;
 use App\Models\Ak05Submission;
 use App\Models\Ak04Submission;
+use App\Models\Ak04QuestionSubmission;
+use App\Models\Ak04Question;
 use App\Models\Ia02Submission;
 use App\Models\Ia06ASubmission;
 use App\Models\Ia03Submission;
@@ -97,6 +99,35 @@ class AssesmentController extends Controller
                 'success' => false,
                 'message' => 'Gagal submit IA-03',
                 'error' => config('app.debug') ? $e->getMessage() : 'Unexpected error',
+            ], 500);
+        }
+    }
+
+    public function getQuestionAk04()
+    {
+        try {
+            $questions = Ak04Question::orderBy('id', 'asc')->get();
+
+            if ($questions->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AK04 questions not found.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'AK04 questions retrieved successfully.',
+                'data' => $questions,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Get AK04 Questions Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve AK04 questions.',
+                'error' => 'An unexpected error occurred. Please try again later.'
             ], 500);
         }
     }
@@ -273,18 +304,27 @@ class AssesmentController extends Controller
     {
         $validated = $request->validate([
             'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
-            'nama_asesor' => 'nullable|string',
-            'nama_asesi' => 'nullable|string',
-            'tanggal_asesmen' => 'nullable|date',
-            'skema_sertifikasi' => 'nullable|string',
-            'no_skema_sertifikasi' => 'nullable|string',
             'alasan_banding' => 'nullable|string',
-            'tanggal_approve' => 'nullable|date',
-            'answers' => 'nullable|array',
+            'questions' => 'nullable|array',
+            'questions.*.ak04_question_id' => 'required_with:questions|exists:ak04_question,id',
+            'questions.*.selected_option' => 'nullable|in:ya,tidak',
         ]);
 
         try {
-            $submission = Ak04Submission::create($validated);
+            $submission = Ak04Submission::create([
+                'assesment_asesi_id' => $validated['assesment_asesi_id'],
+                'alasan_banding' => $validated['alasan_banding'] ?? null,
+            ]);
+            // Create question submissions if provided
+            if (!empty($validated['questions'])) {
+                foreach ($validated['questions'] as $q) {
+                    Ak04QuestionSubmission::create([
+                        'ak04_submission_id' => $submission->id,
+                        'ak04_question_id' => $q['ak04_question_id'],
+                        'selected_option' => $q['selected_option'] ?? null,
+                    ]);
+                }
+            }
             return response()->json([
                 'success' => true,
                 'message' => 'AK04 submission berhasil disimpan',
@@ -306,7 +346,8 @@ class AssesmentController extends Controller
     public function getAk04ByAssesi($assesi_id)
     {
         try {
-            $submissions = Ak04Submission::whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
+            $submissions = Ak04Submission::with(['questionSubmissions.question', 'questions'])
+                ->whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
                 $q->where('assesi_id', $assesi_id);
             })->get();
 
@@ -716,25 +757,26 @@ class AssesmentController extends Controller
     {
         $validated = $request->validate([
             'assesment_asesi_id' => 'required|exists:assesment_asesi,id',
+            'rekomendasi_hasil' => 'required|in:kompeten,tidak_kompeten',
+            'tindak_lanjut' => 'nullable|string',
+            'komentar_asesor' => 'nullable|string',
             'ttd_asesi' => 'nullable|in:belum,sudah',
             'ttd_asesor' => 'nullable|in:belum,sudah',
             'units' => 'required|array',
             'units.*.unit_id' => 'required|exists:units,id',
-            'units.*.rekomendasi_hasil' => 'required|in:kompeten,tidak_kompeten',
-            'units.*.tindak_lanjut' => 'nullable|string',
-            'units.*.komentar_asesor' => 'nullable|string',
             'units.*.bukti_yang_relevan' => 'required|array',
-            'units.*.bukti_yang_relevan.*.bukti_description' => [
-                'required',
-                Rule::exists('bukti_dokumen_assesi', 'description')->where(function ($query) {
-                    $query->where('assesi_id', Assesment_Asesi::find(request('assesment_asesi_id'))->assesi_id);
-                })
-            ]
+            'units.*.bukti_yang_relevan.*.bukti_description' => 'required|string'
         ],
         [
             // General errors
             'assesment_asesi_id.required' => 'ID asesmen asesi wajib diisi.',
             'assesment_asesi_id.exists' => 'ID asesmen asesi tidak ditemukan dalam sistem.',
+
+            // Submission-level fields
+            'rekomendasi_hasil.required' => 'Rekomendasi hasil wajib diisi.',
+            'rekomendasi_hasil.in' => 'Rekomendasi hasil hanya boleh bernilai "kompeten" atau "tidak_kompeten".',
+            'tindak_lanjut.string' => 'Tindak lanjut harus berupa teks.',
+            'komentar_asesor.string' => 'Komentar asesor harus berupa teks.',
 
             // Units array errors
             'units.required' => 'Data unit wajib diisi.',
@@ -743,12 +785,6 @@ class AssesmentController extends Controller
             // Unit-specific errors
             'units.*.unit_id.required' => 'ID unit wajib diisi untuk setiap unit.',
             'units.*.unit_id.exists' => 'ID unit tidak valid atau tidak ditemukan dalam sistem.',
-            'units.*.rekomendasi_hasil.required' => 'Rekomendasi hasil wajib diisi untuk setiap unit.',
-            'units.*.rekomendasi_hasil.in' => 'Rekomendasi hasil hanya boleh bernilai "kompeten" atau "tidak_kompeten".',
-            'units.*.tindak_lanjut.string' => 'Tindak lanjut harus berupa teks.',
-            'units.*.komentar_asesor.string' => 'Komentar asesor harus berupa teks.',
-            'units.*.ttd_asesi.string' => 'Tanda tangan asesi harus berupa teks.',
-            'units.*.ttd_asesor.string' => 'Tanda tangan asesor harus berupa teks.',
 
             // Bukti yang relevan errors
             'units.*.bukti_yang_relevan.required' => 'Bukti yang relevan wajib diisi untuk setiap unit.',
@@ -765,36 +801,22 @@ class AssesmentController extends Controller
         try {
             $mainSubmission = Ak02Submission::create([
                 'assesment_asesi_id' => $validated['assesment_asesi_id'],
+                'rekomendasi_hasil' => $validated['rekomendasi_hasil'],
+                'tindak_lanjut' => $validated['tindak_lanjut'] ?? null,
+                'komentar_asesor' => $validated['komentar_asesor'] ?? null,
                 'ttd_asesi' => $validated['ttd_asesi'] ?? null,
                 'ttd_asesor' => $validated['ttd_asesor'] ?? null,
             ]);
-
-            // Preload bukti untuk efisiensi
-            $buktiDescriptions = collect($validated['units'])
-                ->pluck('bukti_yang_relevan.*.bukti_description')
-                ->flatten();
-
-            $buktiDokumenMap = BuktiDokumenAssesi::whereIn('description', $buktiDescriptions)
-                ->where('assesi_id', $assesi_id)
-                ->get()
-                ->keyBy('description');
-
             foreach ($validated['units'] as $unit) {
+                // Create detail per unit (no 'bukti' column on details table)
                 $detail = $mainSubmission->details()->create([
                     'unit_id' => $unit['unit_id'],
-                    'rekomendasi_hasil' => $unit['rekomendasi_hasil'],
-                    'tindak_lanjut' => $unit['tindak_lanjut'] ?? null,
-                    'komentar_asesor' => $unit['komentar_asesor'] ?? null,
                 ]);
 
                 foreach ($unit['bukti_yang_relevan'] as $bukti) {
-                    $buktiDokumen = $buktiDokumenMap[$bukti['bukti_description']] ?? null;
-                    if (!$buktiDokumen) {
-                        throw new \Exception("Bukti dokumen not found: " . $bukti['bukti_description']);
-                    }
-
+                    // Store the bukti description string directly on ak02_detail_bukti.bukti
                     $detail->bukti()->create([
-                        'bukti_id' => $buktiDokumen->id
+                        'bukti' => $bukti['bukti_description']
                     ]);
                 }
             }

@@ -10,22 +10,34 @@ return new class extends Migration {
         Schema::create('ak04_submissions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('assesment_asesi_id');
-            $table->string('nama_asesor')->nullable();
-            $table->string('nama_asesi')->nullable();
-            $table->date('tanggal_asesmen')->nullable();
-            $table->string('skema_sertifikasi')->nullable();
-            $table->string('no_skema_sertifikasi')->nullable();
             $table->text('alasan_banding')->nullable();
-            $table->date('tanggal_approve')->nullable();
-            $table->json('answers')->nullable();
             $table->timestamps();
 
             $table->foreign('assesment_asesi_id')->references('id')->on('assesment_asesi')->onDelete('cascade');
         });
+        
+        Schema::create('ak04_question', function (Blueprint $table) {
+            $table->id();
+            $table->text('question');
+            $table->timestamps();
+        });
+
+        Schema::create('ak04_question_submissions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('ak04_submission_id');
+            $table->foreignId('ak04_question_id')->constrained('ak04_question')->onDelete('cascade');
+            $table->enum('selected_option', ['ya', 'tidak'])->nullable();
+            $table->timestamps();
+
+            $table->foreign('ak04_submission_id')->references('id')->on('ak04_submissions')->onDelete('cascade');
+        });
+
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('ak04_question_submissions');
+        Schema::dropIfExists('ak04_question');
         Schema::dropIfExists('ak04_submissions');
     }
 };
