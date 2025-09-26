@@ -1028,60 +1028,50 @@ class AssesmentController extends Controller
     }
 
 
-    public function getIa01ByAssesi($assesmentAsesiId)
+    public function getIa01ByAssesi($assesi_id)
     {
         try {
-            // Pastikan Assesment_Asesi ada
-            $assesmentAsesi = Assesment_Asesi::with(['assesment.skema', 'assesment.assesor'])
-                ->find($assesmentAsesiId);
-
-            if (!$assesmentAsesi) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Assesment_Asesi not found.'
-                ], 404);
-            }
-
-            // Ambil data Form IA01 Submission berdasarkan assesment_asesi_id
-            $ia01Submissions = FormIa01Submission::where('assesment_asesi_id', $assesmentAsesiId)
+            // Ambil data IA01 berdasarkan assesi_id via relasi assesment_asesi
+            $ia01Submissions = FormIa01Submission::whereHas('assesmentAsesi', function ($query) use ($assesi_id) {
+                    $query->where('assesi_id', $assesi_id);
+                })
                 ->with([
                     'details' => function ($query) {
                         $query->with([
                             'element' => function ($q) {
-                                $q->with('kuk'); // KUK ada di dalam element
+                                $q->with('kriteriaUntukKerja');
                             }
                         ]);
-                    }
+                    },
+                    'assesmentAsesi.assesment.skema',
+                    'assesmentAsesi.assesment.assesor'
                 ])
                 ->get();
 
             if ($ia01Submissions->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'IA01 submissions not found for this assesment asesi.'
+                    'message' => 'IA01 submissions not found for the given assesi ID.'
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'IA01 submissions retrieved successfully.',
-                'data' => [
-                    'assesment_asesi' => $assesmentAsesi,
-                    'submissions' => $ia01Submissions
-                ]
+                'data' => $ia01Submissions
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Get IA01 Submission Error: ' . $e->getMessage(), [
-                'assesment_asesi_id' => $assesmentAsesiId,
+                'assesi_id' => $assesi_id,
                 'user_id' => auth()->id()
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve IA01 submissions.',
-                'error' => 'An unexpected error occurred. Please try again later. error: ' . $e->getMessage()
-            ], 500);
+                'error' => 'An unexpected error occurred. Please try again later.'
+                ], 500);
         }
     }
 
