@@ -517,7 +517,7 @@ class AssesmentController extends Controller
     public function show($id)
     {
         try {
-            $assessment = Assesment::with(['skema', 'admin', 'assesor'])->findOrFail($id);
+            $assessment = Assesment::with(['schema', 'admin', 'assesor'])->findOrFail($id);
             return response()->json([
                 'success' => true,
                 'message' => 'Assessment details',
@@ -1123,7 +1123,7 @@ class AssesmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve AK02 submissions.',
-                'error' => 'An unexpected error occurred. Please try again later.'
+                'error' => 'An unexpected error occurred. Please try again later.'. $e->getMessage()
             ], 500);
         }
     }
