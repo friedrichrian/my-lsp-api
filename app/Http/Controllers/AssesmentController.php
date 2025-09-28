@@ -346,10 +346,14 @@ class AssesmentController extends Controller
     public function getAk04ByAssesi($assesi_id)
     {
         try {
-            $submissions = Ak04Submission::with(['questionSubmissions.question', 'questions'])
+            $submissions = Ak04Submission::with([
+                    'assesmentAsesi',
+                    'questionSubmissions.question' // ambil jawaban + detail pertanyaan
+                ])
                 ->whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
-                $q->where('assesi_id', $assesi_id);
-            })->get();
+                    $q->where('assesi_id', $assesi_id);
+                })
+                ->get();
 
             if ($submissions->isEmpty()) {
                 return response()->json([
@@ -358,23 +362,43 @@ class AssesmentController extends Controller
                 ], 404);
             }
 
+            // Bentuk response yang lebih rapih (optional)
+            $data = $submissions->map(function ($submission) {
+                return [
+                    'id' => $submission->id,
+                    'assesment_asesi_id' => $submission->assesment_asesi_id,
+                    'alasan_banding' => $submission->alasan_banding,
+                    'questions' => $submission->questionSubmissions->map(function ($qs) {
+                        return [
+                            'question_id' => $qs->ak04_question_id,
+                            'question_text' => $qs->question->question ?? null,
+                            'selected_option' => $qs->selected_option,
+                        ];
+                    }),
+                    'created_at' => $submission->created_at,
+                ];
+            });
+
             return response()->json([
                 'success' => true,
                 'message' => 'AK04 submissions retrieved successfully.',
-                'data' => $submissions,
+                'data' => $data,
             ], 200);
+
         } catch (\Exception $e) {
             Log::error('Get AK04 Submission Error: ' . $e->getMessage(), [
                 'assesi_id' => $assesi_id,
                 'user_id' => auth()->id(),
             ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve AK04 submissions.',
-                'error' => 'An unexpected error occurred. Please try again later.'
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
     public function createAssesment(Request $request)
     {
         $validated = $request->validate([
@@ -1078,19 +1102,15 @@ class AssesmentController extends Controller
     public function getAk02ByAssesi($assesi_id)
     {
         try {
-            // Ambil data Ak02Submission berdasarkan assesi_id
             $ak02Submissions = Ak02Submission::whereHas('assesmentAsesi', function ($query) use ($assesi_id) {
-                $query->where('assesi_id', $assesi_id);
-            })
-            ->with([
-                'details' => function ($query) {
-                    $query->with(['unit', 'bukti.bukti']);
-                },
-                'assesmentAsesi'
-            ])
-            ->get();
+                    $query->where('assesi_id', $assesi_id);
+                })
+                ->with([
+                    'details.unit',   // ambil unit info
+                    'details.bukti'   // ambil bukti (string-string yang sudah disimpan)
+                ])
+                ->get();
 
-            // Jika tidak ada data
             if ($ak02Submissions->isEmpty()) {
                 return response()->json([
                     'success' => false,
@@ -1098,22 +1118,13 @@ class AssesmentController extends Controller
                 ], 404);
             }
 
-            // Tambahkan view_url untuk setiap bukti dokumen
-            $ak02Submissions->each(function ($submission) {
-                $submission->details->each(function ($detail) {
-                    $detail->bukti->each(function ($bukti) {
-                        if ($bukti->bukti) {
-                            $bukti->bukti->view_url = route('bukti-dokumen.view', $bukti->bukti->id);
-                        }
-                    });
-                });
-            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'AK02 submissions retrieved successfully.',
                 'data' => $ak02Submissions
             ], 200);
+
         } catch (\Exception $e) {
             Log::error('Get AK02 Submission Error: ' . $e->getMessage(), [
                 'assesi_id' => $assesi_id,
@@ -1123,10 +1134,11 @@ class AssesmentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve AK02 submissions.',
-                'error' => 'An unexpected error occurred. Please try again later.'. $e->getMessage()
+                'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     public function getAk03ByAssesi($assesi_id)
     {
