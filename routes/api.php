@@ -14,6 +14,7 @@ use App\Http\Controllers\AssesmentAsesiController;
 use App\Http\Controllers\JurusanController;
 use \App\Http\Controllers\QuestionController;
 use App\Http\Controllers\IaDocController;
+use App\Http\Controllers\KomponenController;
 
     // Hanya 10 request per menit per user/IP
     Route::prefix('auth')->group(function () {
@@ -100,6 +101,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //Approve by Assesor
     Route::post('/approvement/assesment/formapl02/{id}', [ApprovementController::class, 'approveFormApl02ByAssesor']);
 
+    //Komponen routes
+    Route::get('/komponen', [KomponenController::class, 'index']);
+    Route::get('/ak04/questions', [AssesmentController::class, 'getQuestionAk04']);
+
     //Approve by Assesi
     Route::get('/assesment/formak01/{id}', [AssesmentController::class, 'showAk01ByAssesi']);
     Route::get('/assesment/formia01/{id}', [AssesmentController::class, 'getIa01ByAssesi']);
@@ -123,6 +128,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
+    Route::get('/assesment-asesi', [AssesmentAsesiController::class, 'index']);
     Route::get('/user/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByUser']);
     Route::post('/asesi/assesment-asesi', [AssesmentAsesiController::class, 'store']);
     Route::get('/asesi/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByAsesi']);
