@@ -14,6 +14,7 @@ class FormAk01Submission extends Model
     protected $fillable = [
         'assesment_asesi_id',
         'submission_date',
+        'ttd_assesor',
         'status'
     ];
 
