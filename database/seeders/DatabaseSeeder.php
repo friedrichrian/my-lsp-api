@@ -27,6 +27,11 @@ class DatabaseSeeder extends Seeder
             AssesmentAsesiSeeder::class,
             IaDocSeeder::class,
             DemoRpl1AssesiSeeder::class,
+            EnsureSchemaUnitsSeeder::class,
+            DemoActiveAssessmentSeeder::class, // Added for demo
+            DemoMultipleAssessmentSeeder::class, // Multiple assessments for testing
+            CleanupAsesiAssessmentsSeeder::class, // Clean up duplicate assessments
+            CreateApl01ForAsesiSeeder::class, // Create APL-01 for test asesi
         ]);
     }
 }

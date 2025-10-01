@@ -180,14 +180,31 @@ class AssesmentAsesiController extends Controller
 
         try {
             $assesmentAsesi = DB::transaction(function () use ($validated) {
-                // Cek apakah peserta sudah pernah daftar assessment lain
-                $alreadyJoined = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])->exists();
+                // Cek apakah peserta sudah terdaftar pada assessment yang sama
+                $existingRecord = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])
+                    ->where('assesment_id', $validated['assesment_id'])
+                    ->first();
 
-                if ($alreadyJoined) {
-                    throw new \Exception('Peserta sudah terdaftar pada assessment lain dan tidak bisa mendaftar lagi.');
+                if ($existingRecord) {
+                    // Jika sudah terdaftar pada assessment yang sama, return yang sudah ada
+                    Log::info('User already registered for this specific assessment, returning existing record');
+                    return $existingRecord;
                 }
 
-                // Kalau belum pernah daftar, simpan
+                // Cek apakah peserta sudah pernah daftar assessment lain (yang masih aktif)
+                $alreadyJoinedOther = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])
+                    ->where('assesment_id', '!=', $validated['assesment_id'])
+                    ->whereHas('assesment', function($query) {
+                        $query->where('status', 'active');
+                    })
+                    ->exists();
+
+                if ($alreadyJoinedOther) {
+                    Log::warning('User trying to register for multiple active assessments');
+                    throw new \Exception('Peserta sudah terdaftar pada assessment lain yang masih aktif dan tidak bisa mendaftar lagi.');
+                }
+
+                // Kalau belum pernah daftar atau assessment lain sudah selesai, simpan
                 return Assesment_Asesi::create([
                     'assesment_id' => $validated['assesment_id'],
                     'assesi_id'    => $validated['assesi_id'],

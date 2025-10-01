@@ -507,13 +507,37 @@ class Apl02ImportController extends Controller
         $schema = Schema::with(['units.elements.kriteriaUntukKerja'])->findOrFail($id);
         $jurusan = $schema->jurusan;
         
+        // Transform data to match frontend expectations
+        $units = $schema->units->map(function($unit) {
+            return [
+                'id' => $unit->id,
+                'unit_ke' => $unit->unit_ke,
+                'kode_unit' => $unit->kode_unit,
+                'judul_unit' => $unit->judul_unit,
+                'elemen' => $unit->elements->mapWithKeys(function($element) {
+                    return [$element->id => [
+                        'id' => $element->id,
+                        'elemen_index' => $element->elemen_index,
+                        'nama_elemen' => $element->nama_elemen,
+                        'kuk' => $element->kriteriaUntukKerja->map(function($kuk) {
+                            return [
+                                'id' => $kuk->id,
+                                'urutan' => $kuk->urutan,
+                                'deskripsi_kuk' => $kuk->deskripsi_kuk
+                            ];
+                        })->toArray()
+                    ]];
+                })->toArray()
+            ];
+        })->toArray();
+        
         return response()->json([
             'success' => true,
             'jurusan' => [
                 'id' => $jurusan->id,
                 'nama_jurusan' => $jurusan->nama_jurusan
             ],
-            'data' => $schema
+            'data' => $units
         ]);
     }
 

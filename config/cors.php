@@ -1,19 +1,18 @@
 <?php
 
 return [
-    // Include Sanctum and API routes
+    // Allow API routes and Sanctum's CSRF cookie endpoint
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    // Allow all methods
+    // Allow all HTTP methods from the frontend during development
     'allowed_methods' => ['*'],
 
-    // Explicitly allow your dev origins (no wildcard when credentials are used)
+    // Explicitly allow Vite dev server origins
     'allowed_origins' => [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
     ],
 
-    // Not using patterns here
     'allowed_origins_patterns' => [],
 
     // Allow all headers
@@ -22,9 +21,9 @@ return [
     // No custom exposed headers
     'exposed_headers' => [],
 
-    // No cache
+    // No cache for preflight
     'max_age' => 0,
 
-    // CRITICAL: must be true for cookies (withCredentials) to work
+    // Required when using cookies (Sanctum) from the browser
     'supports_credentials' => true,
 ];

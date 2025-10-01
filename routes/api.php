@@ -144,6 +144,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/profile', [AssesiController::class, 'updateSelf']);
 
     Route::get('/formApl01', [AssesiController::class, 'show']);
+    Route::get('/formApl01/attachments-as-bukti', [AssesiController::class, 'getApl01AttachmentsAsBukti']);
+    Route::post('/test-apl02', function(\Illuminate\Http\Request $request) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Test endpoint working',
+            'user' => auth()->user()->id ?? 'not authenticated',
+            'data_received' => $request->all()
+        ]);
+    });
     Route::get('/apl02/{id}', [Apl02ImportController::class, 'show']);
 
     Route::get('/apl02/assesi/{id}', [AssesmentController::class, 'showApl02ByAssesi']);
