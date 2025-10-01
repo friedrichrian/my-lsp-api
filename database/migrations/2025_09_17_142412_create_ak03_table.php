@@ -14,7 +14,7 @@ return new class extends Migration
         // tabel komponen (master)
         Schema::create('komponen', function (Blueprint $table) {
             $table->id();
-            $table->string('komponen'); // contoh: "Saya mendapatkan penjelasan yang cukup memadai mengenai proses asesmen"
+            $table->text('komponen'); // contoh: "Saya mendapatkan penjelasan yang cukup memadai mengenai proses asesmen"
             $table->timestamps();
         });
 

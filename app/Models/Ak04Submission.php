@@ -13,24 +13,24 @@ class Ak04Submission extends Model
 
     protected $fillable = [
         'assesment_asesi_id',
-        'nama_asesor',
-        'nama_asesi',
-        'tanggal_asesmen',
-        'skema_sertifikasi',
-        'no_skema_sertifikasi',
         'alasan_banding',
-        'tanggal_approve',
-        'answers',
     ];
 
-    protected $casts = [
-        'answers' => 'array',
-        'tanggal_asesmen' => 'date',
-        'tanggal_approve' => 'date',
-    ];
 
     public function assesmentAsesi()
     {
         return $this->belongsTo(Assesment_Asesi::class, 'assesment_asesi_id');
+    }
+
+    public function questions()
+    {
+        return $this->belongsToMany(Ak04Question::class, 'ak04_question_submissions', 'ak04_submission_id', 'ak04_question_id')
+            ->withPivot('selected_option')
+            ->withTimestamps();
+    }
+
+    public function questionSubmissions()
+    {
+        return $this->hasMany(Ak04QuestionSubmission::class, 'ak04_submission_id');
     }
 }

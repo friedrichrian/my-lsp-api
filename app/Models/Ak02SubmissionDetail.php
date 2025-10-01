@@ -11,9 +11,6 @@ class Ak02SubmissionDetail extends Model
     protected $fillable = [
         'ak02_submission_id',
         'unit_id',
-        'rekomendasi_hasil',
-        'tindak_lanjut',
-        'komentar_asesor',
     ];
 
     public function submission()

@@ -13,8 +13,8 @@ class FormAk01Submission extends Model
 
     protected $fillable = [
         'assesment_asesi_id',
-        'skema_id',
         'submission_date',
+        'ttd_assesor',
         'status'
     ];
 
@@ -25,6 +25,10 @@ class FormAk01Submission extends Model
     public function skema()
     {
         return $this->belongsTo(Schema::class, 'skema_id');
+    }
+
+    public function assesmentAsesi(){
+        return $this->belongsTo(Assesment_Asesi::class, 'assesment_asesi_id');
     }
 
 

@@ -45,14 +45,14 @@ class DemoActiveAssessmentSeeder extends Seeder
             return;
         }
 
-        // Link with assesment_asesi as active/scheduled
+        // Link with assesment_asesi (use valid enum values)
         Assesment_Asesi::updateOrCreate(
             [
                 'assesment_id' => $assessment->id,
                 'assesi_id' => $assesi->id,
             ],
             [
-                'status' => 'active',
+                'status' => 'mengerjakan', // Valid enum: belum, mengerjakan, selesai
             ]
         );
 

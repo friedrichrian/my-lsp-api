@@ -8,24 +8,20 @@ class FormApl02Submission extends Model
 {
     
     protected $fillable = [
-        'skema_id',
+        'ttd_asesi',
+        'ttd_assesor',
         'submission_date',
         'assesi_id',
-        'assesment_asesi_id'
+        'assesment_asesi_id',
+        'ttd_assesor'
     ];
 
-    public function assesi()
-    {
-        return $this->belongsTo(Assesi::class, 'assesi_id');
-    }
-
-    public function element(){
-        return $this->belongsTo(Element::class, 'elements_id');
-    }
-
     public function details(){
-        return $this->hasMany(FormApl02SubmissionDetail::class, 'submission_id');
+        return $this->hasMany(FormApl02SubmissionDetail::class, 'submission_id')
+                    ->with('attachments.bukti'); // langsung eager load
     }
+
+    
 
     public function assesment_asesi()
     {

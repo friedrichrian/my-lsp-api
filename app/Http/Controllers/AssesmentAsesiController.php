@@ -46,10 +46,39 @@ class AssesmentAsesiController extends Controller
         }
     }
 
+    public function showByUser($user_id){
+        try{
+            $assesmentAsesi = Assesment_Asesi::whereHas('asesi', function ($query) use ($user_id) {
+                $query->where('user_id', $user_id);
+            })->get();
+            if ($assesmentAsesi->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No assessment participants found for this asesi',
+                    'data'    => []
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment participants retrieved successfully',
+                'data'    => $assesmentAsesi
+            ], 200);
+        }catch(\Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while retrieving assessment participants',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function showByAsesi($assesi_id)
     {
         try {
-            $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)->get();
+            $assesmentAsesi = Assesment_Asesi::where('assesi_id', $assesi_id)
+            ->with('assesi')
+            ->get();
 
             if ($assesmentAsesi->isEmpty()) {
                 return response()->json([
@@ -151,14 +180,31 @@ class AssesmentAsesiController extends Controller
 
         try {
             $assesmentAsesi = DB::transaction(function () use ($validated) {
-                // Cek apakah peserta sudah pernah daftar assessment lain
-                $alreadyJoined = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])->exists();
+                // Cek apakah peserta sudah terdaftar pada assessment yang sama
+                $existingRecord = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])
+                    ->where('assesment_id', $validated['assesment_id'])
+                    ->first();
 
-                if ($alreadyJoined) {
-                    throw new \Exception('Peserta sudah terdaftar pada assessment lain dan tidak bisa mendaftar lagi.');
+                if ($existingRecord) {
+                    // Jika sudah terdaftar pada assessment yang sama, return yang sudah ada
+                    Log::info('User already registered for this specific assessment, returning existing record');
+                    return $existingRecord;
                 }
 
-                // Kalau belum pernah daftar, simpan
+                // Cek apakah peserta sudah pernah daftar assessment lain (yang masih aktif)
+                $alreadyJoinedOther = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])
+                    ->where('assesment_id', '!=', $validated['assesment_id'])
+                    ->whereHas('assesment', function($query) {
+                        $query->where('status', 'active');
+                    })
+                    ->exists();
+
+                if ($alreadyJoinedOther) {
+                    Log::warning('User trying to register for multiple active assessments');
+                    throw new \Exception('Peserta sudah terdaftar pada assessment lain yang masih aktif dan tidak bisa mendaftar lagi.');
+                }
+
+                // Kalau belum pernah daftar atau assessment lain sudah selesai, simpan
                 return Assesment_Asesi::create([
                     'assesment_id' => $validated['assesment_id'],
                     'assesi_id'    => $validated['assesi_id'],

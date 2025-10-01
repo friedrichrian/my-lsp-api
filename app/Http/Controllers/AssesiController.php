@@ -153,7 +153,9 @@ class AssesiController extends Controller
     {
         $user_id = $request->user()->id;
 
-        $formApl01 = FormApl01::where('user_id', $user_id)->first();
+        $formApl01 = FormApl01::where('user_id', $user_id)
+            ->with(['attachments', 'sertificationData'])
+            ->first();
 
         if(!$formApl01) {
             return response()->json([
@@ -166,6 +168,61 @@ class AssesiController extends Controller
             'success' => true,
             'message' => 'Form APL01 retrieved successfully',
             'data' => $formApl01
+        ], 200);
+    }
+
+    /**
+     * Get APL-01 attachments as bukti options for APL-02
+     */
+    public function getApl01AttachmentsAsBukti(Request $request)
+    {
+        $user = $request->user();
+        $user_id = $user->id;
+
+        // Ensure user has assesi record (auto-create if needed)
+        if (!$user->assesi) {
+            \App\Models\Assesi::create([
+                'user_id' => $user->id,
+                'jurusan_id' => $user->jurusan_id ?: 1,
+                'nama_lengkap' => $user->username ?: 'Asesi Baru',
+                'no_ktp' => 'TEMP_' . $user->id . '_' . time(),
+                'tempat_lahir' => 'Belum Diisi',
+                'tanggal_lahir' => '2000-01-01',
+                'jenis_kelamin' => 'Laki-laki',
+                'alamat' => 'Belum Diisi',
+                'kode_pos' => '00000',
+                'kualifikasi_pendidikan' => 'Belum Diisi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $formApl01 = FormApl01::where('user_id', $user_id)
+            ->with('attachments')
+            ->first();
+
+        if (!$formApl01 || !$formApl01->attachments) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No APL-01 attachments found',
+                'data' => []
+            ], 200);
+        }
+
+        // Format attachments as bukti options
+        $buktiOptions = $formApl01->attachments->map(function ($attachment) {
+            return [
+                'id' => 'apl01_' . $attachment->id, // Prefix to distinguish from regular bukti
+                'label' => $attachment->description,
+                'file_path' => $attachment->file_path,
+                'source' => 'apl01'
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'APL-01 attachments retrieved successfully',
+            'data' => $buktiOptions
         ], 200);
     }
 

@@ -10,7 +10,7 @@ class Ak02DetailBukti extends Model
 
     protected $fillable = [
         'ak02_detail_id',
-        'bukti_id',
+        'bukti',
     ];
 
     public function detail()
