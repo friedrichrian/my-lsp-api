@@ -80,6 +80,7 @@ class AssesmentAsesiController extends Controller
             ->with('assesi')
             ->get();
 
+
             if ($assesmentAsesi->isEmpty()) {
                 return response()->json([
                     'success' => false,
@@ -181,7 +182,9 @@ class AssesmentAsesiController extends Controller
         try {
             $assesmentAsesi = DB::transaction(function () use ($validated) {
                 // Cek apakah peserta sudah pernah daftar assessment lain
-                $alreadyJoined = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])->exists();
+            $alreadyJoined = Assesment_Asesi::where('assesi_id', $validated['assesi_id'])
+                ->whereNotIn('status', ['selesai','kompeten', 'tidak kompeten', 'gagal'])
+                ->exists();
 
                 if ($alreadyJoined) {
                     throw new \Exception('Peserta sudah terdaftar pada assessment lain dan tidak bisa mendaftar lagi.');

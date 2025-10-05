@@ -343,16 +343,14 @@ class AssesmentController extends Controller
         }
     }
 
-    public function getAk04ByAssesi($assesi_id)
+    public function getAk04ByAssesi($assesment_asesi_id)
     {
         try {
             $submissions = Ak04Submission::with([
                     'assesmentAsesi',
                     'questionSubmissions.question' // ambil jawaban + detail pertanyaan
                 ])
-                ->whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
-                    $q->where('assesi_id', $assesi_id);
-                })
+                ->where('assesment_asesi_id', $assesment_asesi_id)
                 ->get();
 
             if ($submissions->isEmpty()) {
@@ -1052,13 +1050,11 @@ class AssesmentController extends Controller
     }
 
 
-    public function getIa01ByAssesi($assesi_id)
+    public function getIa01ByAssesi($assesment_asesi_id)
     {
         try {
             // Ambil data IA01 berdasarkan assesi_id via relasi assesment_asesi
-            $ia01Submissions = FormIa01Submission::whereHas('assesmentAsesi', function ($query) use ($assesi_id) {
-                    $query->where('assesi_id', $assesi_id);
-                })
+            $ia01Submissions = FormIa01Submission::where('assesment_asesi_id', $assesment_asesi_id)
                 ->with([
                     'details' => function ($query) {
                         $query->with([
@@ -1099,12 +1095,10 @@ class AssesmentController extends Controller
         }
     }
 
-    public function getAk02ByAssesi($assesi_id)
+    public function getAk02ByAssesi($assesment_asesi_id)
     {
         try {
-            $ak02Submissions = Ak02Submission::whereHas('assesmentAsesi', function ($query) use ($assesi_id) {
-                    $query->where('assesi_id', $assesi_id);
-                })
+            $ak02Submissions = Ak02Submission::where('assesment_asesi_id', $assesment_asesi_id)
                 ->with([
                     'details.unit',   // ambil unit info
                     'details.bukti'   // ambil bukti (string-string yang sudah disimpan)
@@ -1127,7 +1121,7 @@ class AssesmentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Get AK02 Submission Error: ' . $e->getMessage(), [
-                'assesi_id' => $assesi_id,
+                'assesment_asesi_id' => $assesment_asesi_id,
                 'user_id' => auth()->id()
             ]);
 
@@ -1140,13 +1134,11 @@ class AssesmentController extends Controller
     }
 
 
-    public function getAk03ByAssesi($assesi_id)
+    public function getAk03ByAssesi($assesment_asesi_id)
     {
         try {
             // Ambil data Ak03Submission berdasarkan assesi_id
-            $ak03Submissions = Ak03Submission::whereHas('assesmentAsesi', function ($query) use ($assesi_id) {
-                $query->where('assesi_id', $assesi_id);
-            })
+            $ak03Submissions = Ak03Submission::where('assesment_asesi_id', $assesment_asesi_id)
             ->with([
                 'details' => function ($query) {
                     $query->with('komponen');
@@ -1182,13 +1174,11 @@ class AssesmentController extends Controller
         }
     }
 
-    public function getAk05ByAssesi($assesi_id)
+    public function getAk05ByAssesi($assesment_asesi_id)
     {
         try {
             // Ambil data Ak05Submission berdasarkan assesi_id
-            $ak05Submissions = Ak05Submission::whereHas('assesmentAsesi', function ($query) use ($assesi_id) {
-                $query->where('assesi_id', $assesi_id);
-            })
+            $ak05Submissions = Ak05Submission::where('assesment_asesi_id', $assesment_asesi_id)
             ->with('assesmentAsesi.asesi')
             ->get();
 
@@ -1388,13 +1378,11 @@ class AssesmentController extends Controller
     }
 
 
-    public function showAk01ByAssesi($assesi_id)
+    public function showAk01ByAssesi($assesment_asesi_id)
     {
         try {
             $ak01 = FormAk01Submission::with('attachments')
-                ->whereHas('assesmentAsesi', function ($q) use ($assesi_id) {
-                    $q->where('assesi_id', $assesi_id);
-                })
+                ->where('assesment_asesi_id', $assesment_asesi_id)
                 ->get();
 
 
