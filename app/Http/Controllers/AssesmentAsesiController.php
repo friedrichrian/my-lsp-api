@@ -190,7 +190,7 @@ class AssesmentAsesiController extends Controller
                 // Kalau belum pernah daftar, simpan
                 return Assesment_Asesi::create([
                     'assesment_id' => $validated['assesment_id'],
-                    'assesi_id'    => $validated['assesi_id'],
+                    'assesi_id'    => $validated['assesi_id']
                 ]);
             });
 
@@ -217,7 +217,7 @@ class AssesmentAsesiController extends Controller
         $validated = $request->validate([
             'assesment_id' => 'sometimes|exists:assesments,id',
             'assesi_id' => 'sometimes|exists:assesi,id',
-            'status' => 'sometimes|in:k,bk',
+            'status' => 'sometimes|in:belum,mengerjakan,selesai',
         ]);
 
         DB::beginTransaction();
@@ -235,6 +235,32 @@ class AssesmentAsesiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update assessment participant',
+            ], 500);
+        }
+    }
+
+    public function setAssesmentAsesiStatus(Request $request, $id)
+    {
+        $assesmentAsesi = Assesment_Asesi::findOrFail($id)->with('assesment', 'assesi')->first();
+        $validated = $request->validate([
+            'status' => 'required',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $assesmentAsesi->update(['status' => $validated['status']]);
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Assessment participant status updated successfully',
+                'data' => $assesmentAsesi
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating assessment participant status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update assessment participant status',
             ], 500);
         }
     }

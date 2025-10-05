@@ -91,7 +91,7 @@ class ApprovementController extends Controller
         ]);
 
         $formApl01 = FormApl01::with('user', 'attachments')
-            ->where('user_id', $id)
+            ->where('id', $id)
             ->first();
 
         DB::beginTransaction();

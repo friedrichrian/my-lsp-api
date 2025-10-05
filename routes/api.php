@@ -104,7 +104,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //Komponen routes
     Route::get('/komponen', [KomponenController::class, 'index']);
     Route::get('/ak04/questions', [AssesmentController::class, 'getQuestionAk04']);
-
     //Approve by Assesi
     Route::get('/assesment/formak01/{id}', [AssesmentController::class, 'showAk01ByAssesi']);
     Route::get('/assesment/formia01/{id}', [AssesmentController::class, 'getIa01ByAssesi']);
@@ -128,6 +127,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/assesment/{id}', [AssesmentController::class, 'show']);
     Route::put('/assesment/{id}', [AssesmentController::class, 'updateAssesment']);
     Route::delete('/assesment/{id}', [AssesmentController::class, 'deleteAssesment']);
+
+    //assesment-asesi
+    Route::patch('/assesment/asesi/{id}/updateStatus', [AssesmentAsesiController::class, 'setAssesmentAsesiStatus']);
     Route::get('/assesment-asesi', [AssesmentAsesiController::class, 'index']);
     Route::get('/user/assesment-asesi/{id}', [AssesmentAsesiController::class, 'showByUser']);
     Route::post('/asesi/assesment-asesi', [AssesmentAsesiController::class, 'store']);
