@@ -162,20 +162,13 @@ class ApprovementController extends Controller
         }
     }
 
-    public function approveFormAk01ByUser(Request $request, $id){
+    public function approveFormAk01ByUser($id){
         $ak01submission = FormAk01Submission::firstWhere('id', $id);
-        $assesi = Assesi::firstWhere('user_id', $ak01submission->assesi_id);
-
-        if(!$assesi){
-            return response()->json([
-                'status' => 'You dont have this ak01'
-            ], 403);
-        }
         
         DB::beginTransaction();
         try {
             $ak01submission->update([
-                'status' => 'approved'
+                'ttd_asesi' => 1
             ]);
 
             DB::commit();
@@ -185,12 +178,6 @@ class ApprovementController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            
-            Log::error('AK01 Approval Error: ' . $e->getMessage(), [
-                'user_id' => auth()->id(),
-                'submission_id' => $id,
-                'request_data' => $request->all()
-            ]);
 
             return response()->json([
                 'status' => 'error',
