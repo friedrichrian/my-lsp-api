@@ -117,7 +117,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/bukti-dokumen/view/{id}', [ApprovementController::class, 'viewAttachment'])->name('bukti-dokumen.view');
 
     Route::post('/user/assesment/formak01/{id}', [ApprovementController::class, 'approveFormAk01ByUser']);
-
+    Route::patch('/user/assesment/formak02/{id}', [ApprovementController::class, 'approveFormAk02ByUser']);
     // List bukti dokumen milik asesi saat ini (untuk dropdown di APL-02)
     Route::get('/bukti-dokumen/self', [ApprovementController::class, 'listBuktiDokumenSelf']);
 

@@ -8,6 +8,7 @@ use App\Models\FormApl01Attachments;
 use App\Models\FormAk01Submission;
 use App\Models\FormAk01Attachments;
 use App\Models\FormApl02Submission;
+use App\Models\Ak02Submission;
 use App\Models\BuktiDokumenAssesi;
 use App\Models\Assesi;
 use App\Models\User;
@@ -168,7 +169,8 @@ class ApprovementController extends Controller
         DB::beginTransaction();
         try {
             $ak01submission->update([
-                'ttd_asesi' => 1
+                'ttd_asesi' => 1,
+                'status' => 'approved'
             ]);
 
             DB::commit();
@@ -182,6 +184,31 @@ class ApprovementController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to process AK01 approval',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    public function approveFormAk02ByUser($id){
+        $ak02submission = Ak02Submission::firstWhere('id', $id);
+        
+        DB::beginTransaction();
+        try {
+            $ak02submission->update([
+                'ttd_asesi' => "sudah"
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'data' => $ak02submission
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to process AK02 approval',
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
