@@ -159,4 +159,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/status/asesi/assesment', [AssesmentController::class, 'getAssesmentAssesiStatus']);
     Route::post('/status/asesi/assesment', [AssesmentController::class, 'assesmentAssesiStatus']);
 
+
+    Route::get('/apl02/asesi/all', [AssesmentController::class, 'getAllApl02']);
+    Route::get('/ak01/asesi/all', [AssesmentController::class, 'getAllAk01']);
+    Route::get('/ia01/asesi/all', [AssesmentController::class, 'getAllIa01']);
 });

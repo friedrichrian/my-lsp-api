@@ -1401,4 +1401,62 @@ class AssesmentController extends Controller
         }
     }
 
+    public function getAllApl02(){
+        try {
+            $apl02 = FormApl02Submission::with('details.attachments.bukti', 'assesment_asesi.assesment.skema.units.elements.kriteriaUntukKerja', 'assesment_asesi.assesi')->get();
+            return response()->json([
+                'status'  => true,
+                'message' => 'APL-02 by assesi',
+                'data'    => $apl02
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil data APL-02',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getAllAk01(){
+        try {
+            $ak01 = FormAk01Submission::with([
+                'attachments',
+                'assesmentAsesi.assesi.user',
+                'assesmentAsesi.assesment.skema'
+            ])->get();
+            return response()->json([
+                'status'  => true,
+                'message' => 'AK-01 by assesi',
+                'data'    => $ak01
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil data AK-01',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getAllIa01(){
+        try {
+            $ia01 = FormIa01Submission::with([
+                'attachments',
+                'assesmentAsesi.assesi.user',
+                'assesmentAsesi.assesment.skema'
+            ])->get();
+            return response()->json([
+                'status'  => true,
+                'message' => 'IA-01 by assesi',
+                'data'    => $ia01
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Gagal mengambil data IA-01',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
 }

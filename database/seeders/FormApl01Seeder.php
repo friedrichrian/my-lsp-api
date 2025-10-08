@@ -40,7 +40,7 @@ class FormApl01Seeder extends Seeder
                 'kode_pos_kantor' => null,
                 'fax_kantor' => null,
                 'email_kantor' => null,
-                'status' => 'pending'
+                'status' => 'accepted'
             ]);
 
             // Create certification data
