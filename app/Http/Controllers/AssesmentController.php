@@ -641,6 +641,112 @@ class AssesmentController extends Controller
         }
     }
 
+    public function updateFormApl01($id, Request $request)
+    {
+        Log::info('Incoming request', [
+            'method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'body' => $request->all(),
+            'files' => $request->file(),
+        ]);
+        $validated = $request->validate([
+            'tujuan_asesmen' => 'sometimes|string|max:255',
+            'schema_id' => 'sometimes|exists:schemas,id',
+            'nama_lengkap' => 'sometimes|string|max:255',
+            'no_ktp' => ['sometimes','string', Rule::unique('form_apl01','no_ktp')->ignore($id)],
+            'tanggal_lahir' => 'sometimes|date',
+            'tempat_lahir' => 'sometimes|string|max:255',
+            'jenis_kelamin' => 'sometimes|in:Laki-laki,Perempuan',
+            'kebangsaan' => 'sometimes|string|max:100',
+            'alamat_rumah' => 'sometimes|string|max:255',
+            'kode_pos' => 'sometimes|string|max:10',
+            'no_telepon_rumah' => 'sometimes|string|max:15',
+            'no_telepon_kantor' => 'sometimes|string|max:15',
+            'no_telepon' => 'sometimes|string|max:15',
+            'email' => ['sometimes','email', Rule::unique('form_apl01','email')->ignore($id)],
+            'kualifikasi_pendidikan' => 'sometimes|string|max:255',
+            'nama_institusi' => 'sometimes|string|max:255',
+            'jabatan' => 'sometimes|string|max:100',
+            'alamat_kantor' => 'sometimes|string|max:255',
+            'kode_pos_kantor' => 'sometimes|string|max:10',
+            'fax_kantor' => 'sometimes|string|max:15',
+            'email_kantor' => 'sometimes|email|max:255',
+            'status' => 'sometimes|in:pending,accepted,rejected',
+            'attachments' => 'sometimes|array',
+            'attachments.*.file' => 'required_with:attachments|mimes:pdf|max:2048',
+            'attachments.*.description' => 'required_with:attachments|string|max:255'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $formApl01 = FormApl01::findOrFail($id);
+            // Update data utama form (hanya yang dikirim)
+            $formApl01->update(array_merge(
+                $validated,
+                ['user_id' => auth()->id()] // optional: pastikan user yang update terekam
+            ));
+
+            // Update data sertifikasi (kalau dikirim)
+            if (isset($validated['tujuan_asesmen']) || isset($validated['schema_id'])) {
+                $sertData = FormApl01SertificationData::where('form_apl01_id', $id)->first();
+                if ($sertData) {
+                    $sertData->update([
+                        'tujuan_asesmen' => $validated['tujuan_asesmen'] ?? $sertData->tujuan_asesmen,
+                        'schema_id' => $validated['schema_id'] ?? $sertData->schema_id
+                    ]);
+                }
+            }
+
+            // Update attachment jika ada
+            if (isset($validated['attachments'])) {
+                // Hapus attachment lama (optional, tergantung kebutuhan)
+                $oldAttachments = FormApl01Attachments::where('form_apl01_id', $id)->get();
+                foreach ($oldAttachments as $old) {
+                    Storage::disk('private')->delete($old->file_path);
+                    $old->delete();
+                }
+
+                // Simpan attachment baru
+                foreach ($validated['attachments'] as $attachment) {
+                    $file = $attachment['file'];
+                    $filename = uniqid().'_'.$file->getClientOriginalName();
+                    $path = 'formapl01/'.$formApl01->id.'/'.$filename;
+
+                    // Enkripsi isi file
+                    $encryptedContents = encrypt(file_get_contents($file->getRealPath()));
+
+                    Storage::disk('private')->put($path, $encryptedContents);
+
+                    FormApl01Attachments::create([
+                        'form_apl01_id' => $formApl01->id,
+                        'nama_dokumen' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'description' => $attachment['description'] ?? null
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Form APL01 updated successfully',
+                'data' => $formApl01->fresh(['sertificationData', 'attachments'])
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Form APL01 Update Error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update Form APL01',
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ], 500);
+        }
+    }
+
     public function formApl02(Request $request)
     {
         $validated = $request->validate([
